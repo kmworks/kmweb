@@ -13,7 +13,6 @@ interface HorizontalRowProps {
   className?: string
   /** fired when scrolled past 95% (dashboard infinite load) */
   onEndReached?: () => void
-  empty?: boolean
 }
 
 export function HorizontalRow({ title, to, children, className, onEndReached }: HorizontalRowProps) {

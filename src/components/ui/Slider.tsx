@@ -9,9 +9,10 @@ interface SliderProps {
   step?: number
   label?: string
   className?: string
+  dir?: 'ltr' | 'rtl'
 }
 
-export function Slider({ value, onValueChange, min, max, step = 1, label, className }: SliderProps) {
+export function Slider({ value, onValueChange, min, max, step = 1, label, className, dir }: SliderProps) {
   return (
     <RadixSlider.Root
       className={cn('relative flex h-5 w-full touch-none items-center select-none', className)}
@@ -21,6 +22,7 @@ export function Slider({ value, onValueChange, min, max, step = 1, label, classN
       max={max}
       step={step}
       aria-label={label}
+      dir={dir}
     >
       <RadixSlider.Track className="relative h-1 flex-1 rounded-full bg-overlay">
         <RadixSlider.Range className="absolute h-full rounded-full bg-accent" />

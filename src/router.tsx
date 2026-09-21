@@ -1,6 +1,8 @@
-import { createBrowserRouter, Navigate, useParams } from 'react-router-dom'
+import { Suspense, lazy } from 'react'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RequireAuth } from '@/components/layout/RequireAuth'
 import { AppShell } from '@/components/layout/AppShell'
+import { LibraryRedirect } from '@/components/layout/LibraryRedirect'
 import { LoginPage } from '@/routes/login'
 import { DashboardPage } from '@/routes/dashboard'
 import { BrowseSeriesPage } from '@/routes/browse/series'
@@ -13,22 +15,24 @@ import { CollectionDetailPage } from '@/routes/detail/collection'
 import { ReadListDetailPage } from '@/routes/detail/readlist'
 import { SearchPage } from '@/routes/search'
 import { AccountPage } from '@/routes/account'
-import { ReaderPage } from '@/routes/read'
 import { NotFoundPage } from '@/routes/not-found'
-import { useLibraryPrefs, type BrowseTab } from '@/lib/store/libraryPrefs'
+import { ReaderSplash } from '@/components/reader/ReaderSplash'
 
-function LibraryRedirect() {
-  const { libraryId = '' } = useParams()
-  const tab = useLibraryPrefs((s) => s.tab[libraryId]) as BrowseTab | undefined
-  return <Navigate to={`/libraries/${libraryId}/${tab ?? 'series'}`} replace />
-}
+const ReaderPage = lazy(() => import('@/routes/read').then((m) => ({ default: m.ReaderPage })))
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   {
     element: <RequireAuth />,
     children: [
-      { path: '/book/:bookId/read', element: <ReaderPage /> },
+      {
+        path: '/book/:bookId/read',
+        element: (
+          <Suspense fallback={<ReaderSplash />}>
+            <ReaderPage />
+          </Suspense>
+        ),
+      },
       {
         element: <AppShell />,
         children: [
