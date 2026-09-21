@@ -35,13 +35,80 @@ export type MediaStatus = 'UNKNOWN' | 'ERROR' | 'READY' | 'UNSUPPORTED' | 'OUTDA
 export type MediaProfile = 'DIVINA' | 'PDF' | 'EPUB'
 export type Role = 'ADMIN' | 'USER' | 'FILE_DOWNLOAD' | 'PAGE_STREAMING' | 'KOBO_SYNC' | 'KOREADER_SYNC'
 
+export type ScanInterval = 'DISABLED' | 'HOURLY' | 'EVERY_6H' | 'EVERY_12H' | 'DAILY' | 'WEEKLY'
+export type SeriesCover = 'FIRST' | 'FIRST_UNREAD_OR_FIRST' | 'FIRST_UNREAD_OR_LAST' | 'LAST'
+
 export interface LibraryDto {
   id: string
   name: string
+  /** Empty string for non-admin users. */
   root: string
   unavailable: boolean
-  seriesCover: 'FIRST' | 'FIRST_UNREAD_OR_FIRST' | 'FIRST_UNREAD_OR_LAST' | 'LAST'
+  importComicInfoBook: boolean
+  importComicInfoSeries: boolean
+  importComicInfoCollection: boolean
+  importComicInfoReadList: boolean
+  importComicInfoSeriesAppendVolume: boolean
+  importEpubBook: boolean
+  importEpubSeries: boolean
+  importMylarSeries: boolean
+  importLocalArtwork: boolean
+  importBarcodeIsbn: boolean
+  scanForceModifiedTime: boolean
+  scanInterval: ScanInterval
+  scanOnStartup: boolean
+  scanCbx: boolean
+  scanPdf: boolean
+  scanEpub: boolean
+  scanDirectoryExclusions: string[]
+  repairExtensions: boolean
+  convertToCbz: boolean
+  emptyTrashAfterScan: boolean
+  seriesCover: SeriesCover
+  hashFiles: boolean
+  hashPages: boolean
+  hashKoreader: boolean
+  analyzeDimensions: boolean
+  oneshotsDirectory?: string | null
+}
+
+/** All fields optional except name/root; omitted fields fall back to server defaults. */
+export interface LibraryCreationDto {
+  name: string
+  root: string
+  importComicInfoBook?: boolean
+  importComicInfoSeries?: boolean
+  importComicInfoCollection?: boolean
+  importComicInfoReadList?: boolean
+  importComicInfoSeriesAppendVolume?: boolean
+  importEpubBook?: boolean
+  importEpubSeries?: boolean
+  importMylarSeries?: boolean
+  importLocalArtwork?: boolean
+  importBarcodeIsbn?: boolean
+  scanForceModifiedTime?: boolean
+  scanInterval?: ScanInterval
+  scanOnStartup?: boolean
+  scanCbx?: boolean
+  scanPdf?: boolean
+  scanEpub?: boolean
+  scanDirectoryExclusions?: string[]
+  repairExtensions?: boolean
+  convertToCbz?: boolean
+  emptyTrashAfterScan?: boolean
+  seriesCover?: SeriesCover
+  hashFiles?: boolean
+  hashPages?: boolean
+  hashKoreader?: boolean
+  analyzeDimensions?: boolean
   oneshotsDirectory?: string
+}
+
+/** Patch semantics: omitted fields keep their current value; null clears nullable fields. */
+export type LibraryUpdateDto = Partial<Omit<LibraryCreationDto, 'oneshotsDirectory' | 'name' | 'root'>> & {
+  name?: string
+  root?: string
+  oneshotsDirectory?: string | null
 }
 
 export interface AlternateTitleDto {
@@ -254,6 +321,139 @@ export interface AuthenticationActivityDto {
 export interface ActuatorInfo {
   git?: { branch?: string; commit?: { id?: string; time?: string } }
   build?: { artifact?: string; name?: string; version?: string; group?: string }
+}
+
+// ---- Admin: user management ----
+
+export interface SharedLibrariesDto {
+  all: boolean
+  libraryIds?: string[]
+}
+
+export interface AgeRestrictionDto {
+  age: number
+  restriction: 'ALLOW_ONLY' | 'EXCLUDE' | 'NONE'
+}
+
+export interface UserCreationDto {
+  email: string
+  password: string
+  roles?: Role[]
+  ageRestriction?: AgeRestrictionDto
+  labelsAllow?: string[]
+  labelsExclude?: string[]
+  sharedLibraries?: SharedLibrariesDto
+}
+
+/** Patch semantics: omitting a field keeps its current value. */
+export interface UserUpdateDto {
+  roles?: Role[]
+  sharedLibraries?: SharedLibrariesDto
+  ageRestriction?: AgeRestrictionDto
+  labelsAllow?: string[]
+  labelsExclude?: string[]
+}
+
+// ---- Admin: server settings ----
+
+export type ThumbnailSize = 'DEFAULT' | 'MEDIUM' | 'LARGE' | 'XLARGE'
+
+/** A setting resolvable from config file, database override, or default. */
+export interface SettingMultiSource<T> {
+  configurationSource: T | null
+  databaseSource: T | null
+  effectiveValue: T | null
+}
+
+export interface SettingsDto {
+  deleteEmptyCollections?: boolean
+  deleteEmptyReadLists?: boolean
+  rememberMeDurationDays?: number
+  thumbnailSize?: ThumbnailSize
+  taskPoolSize?: number
+  serverPort?: SettingMultiSource<number>
+  serverContextPath?: SettingMultiSource<string>
+  koboProxy?: boolean
+  koboPort?: number
+  kepubifyPath?: SettingMultiSource<string>
+  maxUploadFileSizeBytes?: number
+}
+
+/** Patch semantics: omit = unchanged; null on multi-source fields clears the database override. */
+export interface SettingsUpdateDto {
+  deleteEmptyCollections?: boolean
+  deleteEmptyReadLists?: boolean
+  rememberMeDurationDays?: number
+  renewRememberMeKey?: boolean
+  thumbnailSize?: ThumbnailSize
+  taskPoolSize?: number
+  serverPort?: number | null
+  serverContextPath?: string | null
+  koboProxy?: boolean
+  koboPort?: number | null
+  kepubifyPath?: string | null
+}
+
+// ---- Admin: filesystem browser ----
+
+export interface PathDto {
+  type: 'directory' | 'file'
+  name: string
+  path: string
+}
+
+export interface DirectoryListingDto {
+  parent?: string
+  directories: PathDto[]
+  files: PathDto[]
+}
+
+// ---- Admin: actuator ----
+
+export interface ActuatorHealth {
+  status: string
+  components?: {
+    db?: { status: string; details?: Record<string, unknown> }
+    diskSpace?: {
+      status: string
+      details?: { total?: number; free?: number; threshold?: number; exists?: boolean }
+    }
+  }
+}
+
+export interface MetricDto {
+  name: string
+  description?: string
+  baseUnit?: string
+  measurements: { statistic: string; value: number }[]
+  availableTags: { tag: string; values: string[] }[]
+}
+
+export interface ScheduledTaskDto {
+  runnable: { target: string }
+  initialDelay: number
+  interval: number
+}
+
+export interface ScheduledTasksDto {
+  cron: unknown[]
+  fixedDelay: unknown[]
+  fixedRate: ScheduledTaskDto[]
+  custom: unknown[]
+}
+
+export interface SessionDto {
+  id: string
+  attributeNames: string[]
+  creationTime: string
+  lastAccessedTime: string
+  maxInactiveInterval: number
+  expired: boolean
+}
+
+export interface TaskQueueStatus {
+  count: number
+  countByType: Record<string, number>
 }
 
 // ---- Search DSL (POST /list bodies) ----

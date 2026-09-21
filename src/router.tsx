@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { RequireAuth } from '@/components/layout/RequireAuth'
+import { RequireAdmin } from '@/components/layout/RequireAdmin'
 import { AppShell } from '@/components/layout/AppShell'
 import { LibraryRedirect } from '@/components/layout/LibraryRedirect'
 import { LoginPage } from '@/routes/login'
@@ -15,6 +16,10 @@ import { CollectionDetailPage } from '@/routes/detail/collection'
 import { ReadListDetailPage } from '@/routes/detail/readlist'
 import { SearchPage } from '@/routes/search'
 import { AccountPage } from '@/routes/account'
+import { AdminLibrariesPage } from '@/routes/admin/libraries'
+import { AdminUsersPage } from '@/routes/admin/users'
+import { AdminSettingsPage } from '@/routes/admin/settings'
+import { AdminServerPage } from '@/routes/admin/server'
 import { NotFoundPage } from '@/routes/not-found'
 import { ReaderSplash } from '@/components/reader/ReaderSplash'
 
@@ -54,6 +59,16 @@ export const router = createBrowserRouter([
           { path: '/book/:bookId', element: <BookDetailPage /> },
           { path: '/search', element: <SearchPage /> },
           { path: '/account', element: <AccountPage /> },
+          {
+            element: <RequireAdmin />,
+            children: [
+              { path: '/admin', element: <Navigate to="/admin/libraries" replace /> },
+              { path: '/admin/libraries', element: <AdminLibrariesPage /> },
+              { path: '/admin/users', element: <AdminUsersPage /> },
+              { path: '/admin/settings', element: <AdminSettingsPage /> },
+              { path: '/admin/server', element: <AdminServerPage /> },
+            ],
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
