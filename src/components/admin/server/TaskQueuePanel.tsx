@@ -1,0 +1,87 @@
+import { useEffect, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { Broom, WarningCircle } from '@phosphor-icons/react'
+import { sse } from '@/lib/api/sse'
+import { tasksApi } from '@/lib/api/settings'
+import type { TaskQueueStatus } from '@/lib/api/types'
+import { plural } from '@/lib/utils/format'
+import { Button } from '@/components/ui/Button'
+import { Dialog } from '@/components/ui/Dialog'
+import { Section } from '@/components/account/Section'
+import { taskTypeLabel } from './format'
+
+export function TaskQueuePanel() {
+  const [status, setStatus] = useState<TaskQueueStatus | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [cleared, setCleared] = useState<number | null>(null)
+
+  // admin stream pushes TaskQueueStatus every 10s; sse.on returns the unbind
+  useEffect(() => sse.on('TaskQueueStatus', (data) => setStatus(data as TaskQueueStatus)), [])
+
+  const clear = useMutation({
+    mutationFn: tasksApi.clear,
+    onSuccess: (n) => {
+      setCleared(n)
+      setConfirmOpen(false)
+    },
+  })
+
+  const count = status?.count ?? 0
+  const entries = Object.entries(status?.countByType ?? {}).sort((a, b) => b[1] - a[1])
+
+  return (
+    <Section title="Task queue">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <span className="font-display text-4xl font-semibold text-ink">{status ? count : '—'}</span>
+          {count > 0 && (
+            <span className="relative flex size-2.5" aria-label="Queue active">
+              <span className="absolute inline-flex size-full animate-ping rounded-full bg-accent opacity-60" />
+              <span className="relative inline-flex size-2.5 rounded-full bg-accent" />
+            </span>
+          )}
+        </div>
+        <Button size="sm" onClick={() => setConfirmOpen(true)} disabled={count === 0}>
+          <Broom className="size-4" />
+          Clear queue
+        </Button>
+      </div>
+      <p className="mt-1 text-xs text-ink-3">
+        {status ? plural(count, 'queued task') : 'Waiting for the first update…'} · Updates every 10s
+      </p>
+
+      {entries.length > 0 && (
+        <ul className="mt-3 flex flex-col divide-y divide-line border-t border-line">
+          {entries.map(([type, n]) => (
+            <li key={type} className="flex items-center justify-between py-2">
+              <span className="text-sm text-ink-2">{taskTypeLabel(type)}</span>
+              <span className="font-mono text-sm text-ink">{n}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {cleared !== null && <p className="mt-3 text-sm text-accent-strong">Cleared {plural(cleared, 'queued task')}.</p>}
+      {clear.isError && (
+        <p className="mt-3 text-sm text-danger">
+          {clear.error instanceof Error ? clear.error.message : 'Could not clear the queue.'}
+        </p>
+      )}
+
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen} title="Clear task queue" size="sm">
+        <div className="flex flex-col gap-4 p-5">
+          <p className="flex items-start gap-2 text-sm text-ink-2">
+            <WarningCircle className="mt-0.5 size-4 shrink-0 text-danger" />
+            Queued tasks that no worker has picked up yet will be removed. Tasks already running are unaffected.
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button onClick={() => setConfirmOpen(false)}>Cancel</Button>
+            <Button variant="danger" loading={clear.isPending} onClick={() => clear.mutate()}>
+              Clear queue
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+    </Section>
+  )
+}

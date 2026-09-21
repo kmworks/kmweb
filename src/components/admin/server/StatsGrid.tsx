@@ -1,0 +1,56 @@
+import { useQuery } from '@tanstack/react-query'
+import { Clock, Cpu, GitBranch, HardDrives, Memory } from '@phosphor-icons/react'
+import { actuatorApi } from '@/lib/api/settings'
+import { serverApi } from '@/lib/api/users'
+import { formatBytes } from '@/lib/utils/format'
+import { StatCard } from './StatCard'
+import { formatDuration } from './format'
+import { metricStat, useMetric } from './useMetric'
+
+export function StatsGrid() {
+  const info = useQuery({ queryKey: ['server-info'], queryFn: serverApi.info, staleTime: Infinity })
+  const health = useQuery({ queryKey: ['admin', 'health'], queryFn: actuatorApi.health, refetchInterval: 30_000 })
+  const uptime = useMetric('process.uptime')
+  const cpu = useMetric('process.cpu.usage')
+  const memory = useMetric('jvm.memory.used')
+
+  const uptimeSecs = metricStat(uptime.data, 'VALUE')
+  const cpuRaw = metricStat(cpu.data, 'VALUE')
+  // kmrs serves process.cpu.usage already in percent; micrometer's convention is a 0–1 ratio
+  const cpuPct = cpuRaw === undefined ? undefined : cpu.data?.baseUnit === 'percent' ? cpuRaw : cpuRaw * 100
+  const memoryBytes = metricStat(memory.data, 'VALUE')
+  const disk = health.data?.components?.diskSpace?.details
+  const git = [info.data?.git?.branch, info.data?.git?.commit?.id].filter(Boolean).join(' · ')
+
+  return (
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
+      <StatCard
+        icon={<GitBranch className="size-3.5" />}
+        label="Version"
+        value={info.data?.build?.version ?? '—'}
+        sub={git || undefined}
+      />
+      <StatCard
+        icon={<Clock className="size-3.5" />}
+        label="Uptime"
+        value={uptimeSecs !== undefined ? formatDuration(uptimeSecs) : '—'}
+      />
+      <StatCard
+        icon={<Cpu className="size-3.5" />}
+        label="CPU"
+        value={cpuPct !== undefined ? `${cpuPct >= 10 ? Math.round(cpuPct) : cpuPct.toFixed(1)}%` : '—'}
+      />
+      <StatCard
+        icon={<Memory className="size-3.5" />}
+        label="Memory"
+        value={memoryBytes !== undefined ? formatBytes(memoryBytes) : '—'}
+      />
+      <StatCard
+        icon={<HardDrives className="size-3.5" />}
+        label="Disk free"
+        value={disk?.free !== undefined ? formatBytes(disk.free) : '—'}
+        sub={disk?.total !== undefined ? `of ${formatBytes(disk.total)}` : undefined}
+      />
+    </div>
+  )
+}
