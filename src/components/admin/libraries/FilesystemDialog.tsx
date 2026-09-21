@@ -1,0 +1,96 @@
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowUp, Folder, WarningCircle } from '@phosphor-icons/react'
+import { filesystemApi } from '@/lib/api/settings'
+import { Dialog } from '@/components/ui/Dialog'
+import { Button } from '@/components/ui/Button'
+import { IconButton } from '@/components/ui/IconButton'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { Tooltip } from '@/components/ui/Tooltip'
+
+interface FilesystemDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  /** absolute path to start from; omitted = filesystem root */
+  initialPath?: string
+  onSelect: (path: string) => void
+}
+
+export function FilesystemDialog({ open, onOpenChange, initialPath, onSelect }: FilesystemDialogProps) {
+  const [path, setPath] = useState<string | undefined>(initialPath)
+
+  useEffect(() => {
+    if (open) setPath(initialPath || undefined)
+  }, [open, initialPath])
+
+  const q = useQuery({
+    queryKey: ['admin', 'filesystem', path ?? ''],
+    queryFn: () => filesystemApi.browse(path),
+    enabled: open,
+    retry: false,
+  })
+  const listing = q.data
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} title="Browse filesystem">
+      <div className="flex items-center gap-2 border-b border-line px-5 py-3">
+        <IconButton label="Up one level" disabled={!listing?.parent} onClick={() => setPath(listing?.parent)}>
+          <ArrowUp className="size-4" />
+        </IconButton>
+        <Tooltip content={path ?? '/'}>
+          <span className="min-w-0 flex-1 truncate font-mono text-[13px] text-ink-2">{path ?? '/'}</span>
+        </Tooltip>
+      </div>
+      <div className="h-80 overflow-y-auto px-3 py-2">
+        {q.isPending ? (
+          <div className="space-y-1">
+            {Array.from({ length: 7 }, (_, i) => (
+              <Skeleton key={i} className="h-9" />
+            ))}
+          </div>
+        ) : q.isError ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <WarningCircle className="size-8 text-danger" />
+            <p className="text-sm text-ink-2">{q.error instanceof Error ? q.error.message : 'Could not list this folder.'}</p>
+            <Button type="button" size="sm" onClick={() => setPath(undefined)}>
+              Back to root
+            </Button>
+          </div>
+        ) : listing && listing.directories.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-ink-3">No folders here</p>
+          </div>
+        ) : (
+          listing?.directories.map((d) => (
+            <button
+              key={d.path}
+              type="button"
+              onClick={() => setPath(d.path)}
+              className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink transition-colors hover:bg-raised"
+            >
+              <Folder className="size-4 shrink-0 text-ink-3" />
+              <span className="min-w-0 truncate">{d.name}</span>
+            </button>
+          ))
+        )}
+      </div>
+      <div className="flex justify-end gap-2 border-t border-line px-5 py-3.5">
+        <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!path}
+          onClick={() => {
+            if (!path) return
+            onSelect(path)
+            onOpenChange(false)
+          }}
+        >
+          Select this folder
+        </Button>
+      </div>
+    </Dialog>
+  )
+}

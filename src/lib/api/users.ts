@@ -1,5 +1,15 @@
 import { api, ApiError } from './client'
-import type { ActuatorInfo, ApiKeyDto, ClaimStatus, OAuth2ClientDto, Page, UserDto } from './types'
+import type {
+  ActuatorInfo,
+  ApiKeyDto,
+  AuthenticationActivityDto,
+  ClaimStatus,
+  OAuth2ClientDto,
+  Page,
+  UserCreationDto,
+  UserDto,
+  UserUpdateDto,
+} from './types'
 
 function basicHeader(email: string, password: string): string {
   return `Basic ${btoa(unescape(encodeURIComponent(`${email}:${password}`)))}`
@@ -36,6 +46,16 @@ export const usersApi = {
 
   authenticationActivity: (params?: { page?: number; size?: number }) =>
     api.get<Page<import('./types').AuthenticationActivityDto>>('/api/v2/users/me/authentication-activity', params),
+
+  // Admin operations
+  list: () => api.get<UserDto[]>('/api/v2/users'),
+  create: (body: UserCreationDto) => api.post<UserDto>('/api/v2/users', body),
+  update: (userId: string, body: UserUpdateDto) => api.patch<void>(`/api/v2/users/${userId}`, body),
+  delete: (userId: string) => api.delete<void>(`/api/v2/users/${userId}`),
+  updatePasswordFor: (userId: string, password: string) =>
+    api.patch<void>(`/api/v2/users/${userId}/password`, { password }),
+  allAuthenticationActivity: (params?: { page?: number; size?: number }) =>
+    api.get<Page<AuthenticationActivityDto>>('/api/v2/users/authentication-activity', params),
 }
 
 export const serverApi = {

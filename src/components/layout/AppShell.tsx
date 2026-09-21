@@ -5,6 +5,9 @@ import {
   Books,
   BookBookmark,
   BookmarkSimple,
+  Gauge,
+  GearSix,
+  HardDrives,
   House,
   List,
   MagnifyingGlass,
@@ -12,6 +15,7 @@ import {
   SignOut,
   Sun,
   UserCircle,
+  Users,
   CaretDown,
   Monitor,
 } from '@phosphor-icons/react'
@@ -20,7 +24,7 @@ import { cn } from '@/lib/utils/cn'
 import { librariesApi } from '@/lib/api/libraries'
 import { usersApi } from '@/lib/api/users'
 import { serverApi } from '@/lib/api/users'
-import { useAuthStore } from '@/lib/store/auth'
+import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { useUiStore } from '@/lib/store/ui'
 import { useLibraryPrefs } from '@/lib/store/libraryPrefs'
 import { queryClient } from '@/lib/queryClient'
@@ -63,6 +67,7 @@ function NavItem({
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { data: libraries, isLoading } = useQuery({ queryKey: ['libraries'], queryFn: librariesApi.list })
   const preferredTab = useLibraryPrefs((s) => s.tab)
+  const user = useAuthStore((s) => s.user)
 
   return (
     <div className="flex h-full flex-col">
@@ -109,6 +114,26 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavItem to="/readlists" icon={<BookmarkSimple />} onClick={onNavigate}>
           Read lists
         </NavItem>
+
+        {isAdmin(user) && (
+          <>
+            <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
+              Administration
+            </div>
+            <NavItem to="/admin/libraries" icon={<HardDrives />} onClick={onNavigate}>
+              Libraries
+            </NavItem>
+            <NavItem to="/admin/users" icon={<Users />} onClick={onNavigate}>
+              Users
+            </NavItem>
+            <NavItem to="/admin/settings" icon={<GearSix />} onClick={onNavigate}>
+              Settings
+            </NavItem>
+            <NavItem to="/admin/server" icon={<Gauge />} onClick={onNavigate}>
+              Server
+            </NavItem>
+          </>
+        )}
       </nav>
 
       <SidebarFooter />

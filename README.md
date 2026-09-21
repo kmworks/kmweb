@@ -29,10 +29,10 @@ blurred-cover resume cards.
 ## Develop
 
 ```sh
-npm install
-npm run dev        # http://localhost:5173, proxies /api /sse /actuator to localhost:25600
-npm run lint
-npm run build      # type-check + production bundle in dist/
+pnpm install
+pnpm dev           # http://localhost:5173, proxies /api /sse /actuator to localhost:25600
+pnpm lint
+pnpm build         # type-check + production bundle in dist/
 ```
 
 Point `webui.dir` (env `KOMGA_WEBUI_DIR`) at the `dist/` folder to have kmrs
