@@ -13,7 +13,7 @@ export function AdminServerPage() {
   const { data: info } = useQuery({ queryKey: ['server-info'], queryFn: serverApi.info, staleTime: Infinity })
 
   useEffect(() => {
-    document.title = 'Server · kmrs'
+    document.title = 'Server · KMReader'
   }, [])
 
   const subtitle = info?.build?.version
@@ -26,11 +26,11 @@ export function AdminServerPage() {
       <div className="space-y-6">
         <StatsGrid />
         <ContentCounts />
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <TaskQueuePanel />
           <TaskExecutionPanel />
         </div>
-        <div className="grid gap-6 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <ScheduledTasksPanel />
           <SessionsPanel />
         </div>

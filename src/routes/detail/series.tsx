@@ -12,6 +12,7 @@ import { readingDirectionLabel, seriesStatusLabel } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { IconButton } from '@/components/ui/IconButton'
+import { BackButton } from '@/components/ui/BackButton'
 import { Menu, MenuItem } from '@/components/ui/Menu'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { GridSkeleton } from '@/components/ui/Skeleton'
@@ -85,7 +86,7 @@ export function SeriesDetailPage() {
 
   const title = series ? series.metadata.title || series.name : ''
   useEffect(() => {
-    document.title = title ? `${title} · kmrs` : 'kmrs'
+    document.title = title ? `${title} · KMReader` : 'KMReader'
   }, [title])
 
   const sentinelRef = useSentinel(
@@ -127,7 +128,7 @@ export function SeriesDetailPage() {
 
   return (
     <div>
-      <DetailHero backdrop={cover}>
+      <DetailHero backdrop={cover} leading={<BackButton to="/series" className="mb-2 -ml-2" />}>
         <CoverImage src={cover} alt={title} eager className="w-36 shrink-0 shadow-card md:w-44" />
         <div className="min-w-0 flex-1">
           {library && (

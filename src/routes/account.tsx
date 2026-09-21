@@ -13,7 +13,7 @@ export function AccountPage() {
   const user = useAuthStore((s) => s.user)
 
   useEffect(() => {
-    document.title = 'Account · kmrs'
+    document.title = 'Account · KMReader'
   }, [])
 
   return (

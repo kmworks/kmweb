@@ -189,11 +189,11 @@ function Reader({ bookId }: { bookId: string }) {
   }, [seriesQuery.data, settingsDirection, showToast])
 
   useEffect(() => {
-    if (book) document.title = `${book.metadata.title || book.name} · kmrs`
+    if (book) document.title = `${book.metadata.title || book.name} · KMReader`
   }, [book])
   useEffect(
     () => () => {
-      document.title = 'kmrs'
+      document.title = 'KMReader'
       window.clearTimeout(toastTimer.current)
       window.clearTimeout(jumpTimer.current)
     },

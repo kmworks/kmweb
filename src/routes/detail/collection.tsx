@@ -7,6 +7,7 @@ import type { CollectionDto } from '@/lib/api/types'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { plural } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
+import { BackButton } from '@/components/ui/BackButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { TextField } from '@/components/ui/TextField'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -107,7 +108,7 @@ export function CollectionDetailPage() {
   })
 
   useEffect(() => {
-    document.title = collection ? `${collection.name} · kmrs` : 'kmrs'
+    document.title = collection ? `${collection.name} · KMReader` : 'KMReader'
   }, [collection])
 
   const sentinelRef = useSentinel(
@@ -135,6 +136,7 @@ export function CollectionDetailPage() {
 
   return (
     <div>
+      <BackButton to="/collections" className="mb-2 -ml-2" />
       <PageHeader
         title={collection.name}
         subtitle={plural(collection.seriesIds.length, 'series', 'series')}

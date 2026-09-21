@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { IconButton } from '@/components/ui/IconButton'
+import { BackButton } from '@/components/ui/BackButton'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { CoverImage } from '@/components/media/CoverImage'
 import { ReadListCard } from '@/components/media/SeriesCard'
@@ -74,7 +75,7 @@ export function BookDetailPage() {
 
   const title = book ? book.metadata.title || book.name : ''
   useEffect(() => {
-    document.title = title ? `${title} · kmrs` : 'kmrs'
+    document.title = title ? `${title} · KMReader` : 'KMReader'
   }, [title])
 
   useEffect(() => {
@@ -100,7 +101,7 @@ export function BookDetailPage() {
 
   return (
     <div>
-      <DetailHero backdrop={cover}>
+      <DetailHero backdrop={cover} leading={<BackButton to={`/series/${book.seriesId}`} className="mb-2 -ml-2" />}>
         <CoverImage src={cover} alt={title} eager className="w-36 shrink-0 shadow-card md:w-44" />
         <div className="min-w-0 flex-1">
           {library && (

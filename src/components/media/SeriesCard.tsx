@@ -24,14 +24,12 @@ export function SeriesCard({ series, className, eager }: { series: SeriesDto; cl
   return (
     <CardFrame to={`/series/${series.id}`} label={title} className={className}>
       <div className="relative">
-        <div className="transition-shadow duration-200 group-hover:shadow-card">
-          <CoverImage
-            src={urls.seriesThumbnail(series.id, bust || undefined)}
-            alt={title}
-            eager={eager}
-            blurred={blurUnread && series.booksUnreadCount > 0}
-          />
-        </div>
+        <CoverImage
+          src={urls.seriesThumbnail(series.id, bust || undefined)}
+          alt={title}
+          eager={eager}
+          blurred={blurUnread && series.booksUnreadCount > 0}
+        />
         <UnreadBadge count={series.booksUnreadCount} />
         <ProgressCapsule
           value={series.booksCount > 0 && series.booksInProgressCount > 0 ? series.booksReadCount / series.booksCount : 0}

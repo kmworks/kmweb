@@ -25,7 +25,7 @@ export function BrowseBooksPage() {
   const title = libraryId ? (library?.name ?? 'Library') : 'All books'
 
   useEffect(() => {
-    document.title = `${title} · kmrs`
+    document.title = `${title} · KMReader`
   }, [title])
 
   const filters = useBrowseFilters()

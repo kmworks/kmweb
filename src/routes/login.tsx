@@ -61,8 +61,10 @@ export function LoginPage() {
       <div className="brand-gradient relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgb(0_0_0/0.35),transparent_60%)]" />
         <div className="relative flex items-center gap-3">
-          <LogoMark className="size-9" />
-          <span className="font-display text-2xl font-semibold tracking-tight text-white">kmrs</span>
+          <span className="flex size-9 items-center justify-center rounded-lg bg-white shadow-lg">
+            <LogoMark className="size-7" />
+          </span>
+          <span className="font-display text-3xl font-semibold tracking-tight text-white">KMReader</span>
         </div>
         <div className="relative">
           <h1 className="font-display max-w-md text-5xl leading-[1.08] font-medium tracking-tight text-white">
@@ -72,14 +74,14 @@ export function LoginPage() {
             Comics, manga and books, served from your own hardware and readable anywhere.
           </p>
         </div>
-        <div className="relative text-xs text-white/50">Self-hosted. API-compatible with Komga.</div>
+        <div className="relative text-xs text-white/50">Self-hosted.</div>
       </div>
 
       {/* form panel */}
       <div className="flex flex-col items-center justify-center px-6 py-12">
-        <div className="mb-8 flex items-center gap-2.5 lg:hidden">
-          <LogoMark className="size-8" />
-          <span className="font-display text-2xl font-semibold tracking-tight">kmrs</span>
+        <div className="mb-10 flex flex-col items-center gap-3 lg:hidden">
+          <LogoMark className="size-18" />
+          <span className="font-display text-3xl font-semibold tracking-tight">KMReader</span>
         </div>
 
         <div className="w-full max-w-sm">

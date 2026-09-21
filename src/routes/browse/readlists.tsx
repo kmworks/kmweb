@@ -18,7 +18,7 @@ export function BrowseReadListsPage() {
   const [text, setText] = useState(qParam)
 
   useEffect(() => {
-    document.title = 'Read lists · kmrs'
+    document.title = 'Read lists · KMReader'
   }, [])
 
   // external URL changes (back/forward, shared links) sync back into the input

@@ -20,7 +20,7 @@ export function AdminLibrariesPage() {
   const [deleting, setDeleting] = useState<LibraryDto | null>(null)
 
   useEffect(() => {
-    document.title = 'Libraries · kmrs'
+    document.title = 'Libraries · KMReader'
   }, [])
 
   const q = useQuery({ queryKey: ['libraries'], queryFn: librariesApi.list })

@@ -18,7 +18,7 @@ export function BrowseCollectionsPage() {
   const [text, setText] = useState(qParam)
 
   useEffect(() => {
-    document.title = 'Collections · kmrs'
+    document.title = 'Collections · KMReader'
   }, [])
 
   // external URL changes (back/forward, shared links) sync back into the input

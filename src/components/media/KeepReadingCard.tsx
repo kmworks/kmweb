@@ -22,7 +22,7 @@ export function KeepReadingCard({ book, className }: { book: BookDto; className?
       aria-label={`Continue reading ${book.metadata.title || book.name}`}
       className={cn(
         'group relative block w-[300px] shrink-0 cursor-pointer overflow-hidden rounded-xl bg-neutral-900',
-        'transition-transform duration-200 ease-out-expo hover:-translate-y-1 active:scale-[0.98] active:translate-y-0',
+        'transition-[transform,box-shadow,filter] duration-300 ease-out-expo group-hover:shadow-card group-hover:brightness-[1.07] active:scale-[0.98]',
         className,
       )}
     >

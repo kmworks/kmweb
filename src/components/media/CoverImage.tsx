@@ -17,7 +17,7 @@ export function CoverImage({ src, alt, className, blurred, eager }: CoverImagePr
   const [error, setError] = useState(false)
 
   return (
-    <div className={cn('cover-aspect relative w-full overflow-hidden rounded-lg bg-raised', className)}>
+    <div className={cn('cover-aspect relative w-full overflow-hidden rounded-lg bg-raised transition-shadow duration-300 group-hover:shadow-card', className)}>
       {!loaded && !error && <div className="shimmer absolute inset-0" />}
       {error ? (
         <div className="absolute inset-0 flex items-center justify-center text-ink-3">
@@ -32,7 +32,7 @@ export function CoverImage({ src, alt, className, blurred, eager }: CoverImagePr
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           className={cn(
-            'absolute inset-0 size-full object-cover transition-opacity duration-300',
+            'absolute inset-0 size-full object-cover transition-[opacity,transform,filter] duration-300 group-hover:scale-[1.05] group-hover:brightness-[1.08]',
             loaded ? 'opacity-100' : 'opacity-0',
             blurred && 'blur-[5px] scale-[1.04]',
           )}

@@ -72,8 +72,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex h-15 items-center gap-2.5 px-4 pt-2">
-        <LogoMark className="size-7" />
-        <span className="font-display text-xl font-semibold tracking-tight">kmrs</span>
+        <LogoMark className="size-6" />
+        <span className="font-display text-xl font-semibold tracking-tight">KMReader</span>
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 py-3">
@@ -144,8 +144,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 function SidebarFooter() {
   const user = useAuthStore((s) => s.user)
   const clear = useAuthStore((s) => s.clear)
-  const theme = useUiStore((s) => s.theme)
-  const setTheme = useUiStore((s) => s.setTheme)
   const navigate = useNavigate()
   const { data: info } = useQuery({ queryKey: ['server-info'], queryFn: serverApi.info, staleTime: Infinity })
 
@@ -159,14 +157,12 @@ function SidebarFooter() {
     }
   }
 
-  const themeIcon = theme === 'light' ? <Sun /> : theme === 'dark' ? <Moon /> : <Monitor />
-  const themeLabel = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'
-
   return (
     <div className="border-t border-line p-3">
       <Menu
         align="start"
         side="top"
+        matchTriggerWidth
         trigger={
           <button className="flex w-full cursor-pointer items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors hover:bg-raised">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-accent-soft text-sm font-semibold text-accent-strong">
@@ -180,9 +176,6 @@ function SidebarFooter() {
         <MenuLabel>{user?.email}</MenuLabel>
         <MenuItem onSelect={() => navigate('/account')}>
           <UserCircle className="size-4" /> Account
-        </MenuItem>
-        <MenuItem onSelect={() => setTheme(theme === 'dark' ? 'light' : theme === 'light' ? 'system' : 'dark')}>
-          {themeIcon} Theme: {themeLabel}
         </MenuItem>
         <MenuSeparator />
         <MenuItem onSelect={logout}>
@@ -239,6 +232,18 @@ function TopSearchBox() {
   )
 }
 
+function ThemeButton() {
+  const theme = useUiStore((s) => s.theme)
+  const setTheme = useUiStore((s) => s.setTheme)
+  const next = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light'
+  const label = theme === 'light' ? 'Light' : theme === 'dark' ? 'Dark' : 'System'
+  return (
+    <IconButton label={`Theme: ${label}`} onClick={() => setTheme(next)}>
+      {theme === 'light' ? <Sun className="size-5" /> : theme === 'dark' ? <Moon className="size-5" /> : <Monitor className="size-5" />}
+    </IconButton>
+  )
+}
+
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const navigate = useNavigate()
@@ -286,6 +291,7 @@ export function AppShell() {
           <IconButton label="Search" className="md:hidden" onClick={() => navigate('/search')}>
             <MagnifyingGlass className="size-5" />
           </IconButton>
+          <ThemeButton />
         </header>
 
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
