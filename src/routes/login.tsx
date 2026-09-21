@@ -1,0 +1,174 @@
+import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { Eye, EyeSlash } from '@phosphor-icons/react'
+import { usersApi } from '@/lib/api/users'
+import { useAuthStore } from '@/lib/store/auth'
+import { LogoMark } from '@/components/LogoMark'
+import { Button } from '@/components/ui/Button'
+import { TextField } from '@/components/ui/TextField'
+import type { UserDto } from '@/lib/api/types'
+
+const REMEMBER_KEY = 'kmweb.rememberMe'
+
+export function LoginPage() {
+  const navigate = useNavigate()
+  const [params] = useSearchParams()
+  const status = useAuthStore((s) => s.status)
+  const setUser = useAuthStore((s) => s.setUser)
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(() => localStorage.getItem(REMEMBER_KEY) !== 'false')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  const { data: claim } = useQuery({ queryKey: ['claim'], queryFn: usersApi.claimStatus, retry: false })
+  const { data: providers } = useQuery({ queryKey: ['oauth2-providers'], queryFn: usersApi.oauth2Providers, retry: false })
+  const claimMode = claim != null && !claim.isClaimed
+
+  useEffect(() => {
+    if (status === 'authenticated') navigate(params.get('redirect') || '/dashboard', { replace: true })
+  }, [status, navigate, params])
+
+  useEffect(() => {
+    const err = params.get('error')
+    if (err) setError(`Sign-in failed (${err})`)
+  }, [params])
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault()
+    setBusy(true)
+    setError(null)
+    localStorage.setItem(REMEMBER_KEY, String(rememberMe))
+    try {
+      const user: UserDto = claimMode
+        ? await claimThenLogin(email, password, rememberMe)
+        : await usersApi.login(email, password, rememberMe)
+      setUser(user)
+      navigate(params.get('redirect') || '/dashboard', { replace: true })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign-in failed')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="grid min-h-dvh bg-bg lg:grid-cols-2">
+      {/* brand panel */}
+      <div className="brand-gradient relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgb(0_0_0/0.35),transparent_60%)]" />
+        <div className="relative flex items-center gap-3">
+          <LogoMark className="size-9" />
+          <span className="font-display text-2xl font-semibold tracking-tight text-white">kmrs</span>
+        </div>
+        <div className="relative">
+          <h1 className="font-display max-w-md text-5xl leading-[1.08] font-medium tracking-tight text-white">
+            Your whole library, beautifully at hand.
+          </h1>
+          <p className="mt-5 max-w-sm text-[15px] leading-relaxed text-white/75">
+            Comics, manga and books, served from your own hardware and readable anywhere.
+          </p>
+        </div>
+        <div className="relative text-xs text-white/50">Self-hosted. API-compatible with Komga.</div>
+      </div>
+
+      {/* form panel */}
+      <div className="flex flex-col items-center justify-center px-6 py-12">
+        <div className="mb-8 flex items-center gap-2.5 lg:hidden">
+          <LogoMark className="size-8" />
+          <span className="font-display text-2xl font-semibold tracking-tight">kmrs</span>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <h2 className="font-display text-3xl font-semibold tracking-tight">
+            {claimMode ? 'Claim this server' : 'Welcome back'}
+          </h2>
+          <p className="mt-2 text-sm text-ink-3">
+            {claimMode ? 'Create the administrator account to get started.' : 'Sign in with your account to continue.'}
+          </p>
+
+          <form onSubmit={submit} className="mt-8 flex flex-col gap-5">
+            <TextField
+              label="Email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+            <TextField
+              label="Password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete={claimMode ? 'new-password' : 'current-password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              trailing={
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="cursor-pointer text-ink-3 hover:text-ink-2"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeSlash className="size-4.5" /> : <Eye className="size-4.5" />}
+                </button>
+              }
+            />
+
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-2 select-none">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="size-4 cursor-pointer accent-[#ff9500]"
+              />
+              Keep me signed in
+            </label>
+
+            {error && <p className="text-sm text-danger">{error}</p>}
+
+            <Button type="submit" variant="primary" loading={busy} className="mt-1 h-11">
+              {claimMode ? 'Create account' : 'Sign in'}
+            </Button>
+          </form>
+
+          {providers && providers.length > 0 && (
+            <>
+              <div className="my-6 flex items-center gap-3 text-xs text-ink-3">
+                <div className="h-px flex-1 bg-line" />
+                or continue with
+                <div className="h-px flex-1 bg-line" />
+              </div>
+              <div className="flex flex-col gap-2">
+                {providers.map((p) => (
+                  <Button key={p.registrationId} onClick={() => (window.location.href = `/oauth2/authorization/${p.registrationId}`)}>
+                    {p.name}
+                  </Button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+async function claimThenLogin(email: string, password: string, rememberMe: boolean): Promise<UserDto> {
+  const res = await fetch('/api/v1/claim', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-Komga-Email': email,
+      'X-Komga-Password': password,
+    },
+  })
+  if (!res.ok) throw new Error(`Could not claim server (${res.status})`)
+  return usersApi.login(email, password, rememberMe)
+}

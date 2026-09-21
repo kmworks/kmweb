@@ -1,0 +1,266 @@
+import { useMemo, useState, type ReactNode } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { X } from '@phosphor-icons/react'
+import { referentialApi } from '@/lib/api/referential'
+import { Skeleton } from '@/components/ui/Skeleton'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { cn } from '@/lib/utils/cn'
+import { useDebouncedValue } from './useDebouncedValue'
+import type { AuthorFilter, FilterGroupDef, FilterState, GroupKey, GroupMode, ReferentialKind } from './types'
+
+const MODE_OPTIONS: { value: GroupMode; label: string }[] = [
+  { value: 'any', label: 'Any' },
+  { value: 'all', label: 'All' },
+]
+
+const GROUP_SEARCH_THRESHOLD = 40
+
+function OptionChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        'inline-flex cursor-pointer items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-colors',
+        active
+          ? 'border-accent/50 bg-accent-soft text-accent-strong'
+          : 'border-line bg-raised text-ink-2 hover:border-line-strong hover:text-ink',
+      )}
+    >
+      {children}
+    </button>
+  )
+}
+
+function GroupSearchInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <input
+      type="search"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="mb-2 h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-xs text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+    />
+  )
+}
+
+function LoadingChips() {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      <Skeleton className="h-6 w-16 rounded-full" />
+      <Skeleton className="h-6 w-24 rounded-full" />
+      <Skeleton className="h-6 w-20 rounded-full" />
+    </div>
+  )
+}
+
+function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <p className="text-xs text-ink-3">
+      Couldn't load options.{' '}
+      <button type="button" onClick={onRetry} className="cursor-pointer text-accent-strong hover:underline">
+        Retry
+      </button>
+    </p>
+  )
+}
+
+function fetchReferential(kind: ReferentialKind, libraryId?: string): Promise<string[]> {
+  const lib = libraryId ? [libraryId] : undefined
+  switch (kind) {
+    case 'publishers':
+      return referentialApi.publishers({ libraryId: lib })
+    case 'genres':
+      return referentialApi.genres({ libraryId: lib })
+    case 'seriesTags':
+      return referentialApi.seriesTags({ libraryId: lib })
+    case 'bookTags':
+      return referentialApi.bookTags({ libraryId: lib })
+    case 'ageRatings':
+      return referentialApi.ageRatings({ libraryId: lib })
+    case 'languages':
+      return referentialApi.languages({ libraryId: lib })
+    case 'releaseDates':
+      return referentialApi.releaseDates({ libraryId: lib })
+  }
+}
+
+function sortReferential(kind: ReferentialKind, values: string[]): string[] {
+  const arr = [...values]
+  if (kind === 'releaseDates') return arr.sort((a, b) => Number(b) - Number(a))
+  if (kind === 'ageRatings')
+    return arr.sort((a, b) => {
+      const na = Number(a)
+      const nb = Number(b)
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb
+      return a.localeCompare(b)
+    })
+  return arr.sort((a, b) => a.localeCompare(b))
+}
+
+function ReferentialOptions({
+  kind,
+  libraryId,
+  selected,
+  enabled,
+  onToggle,
+}: {
+  kind: ReferentialKind
+  libraryId?: string
+  selected: string[]
+  enabled: boolean
+  onToggle: (value: string) => void
+}) {
+  const [filter, setFilter] = useState('')
+  const query = useQuery({
+    queryKey: ['referential', kind, libraryId ?? 'all'],
+    queryFn: () => fetchReferential(kind, libraryId),
+    enabled,
+    staleTime: 60_000,
+  })
+
+  const options = useMemo(() => sortReferential(kind, query.data ?? []), [kind, query.data])
+  const visible = useMemo(() => {
+    const f = filter.trim().toLowerCase()
+    // selected values stay visible so they can be deselected while filtering
+    return options.filter((o) => selected.includes(o) || !f || o.toLowerCase().includes(f))
+  }, [options, filter, selected])
+
+  if (query.isPending) return <LoadingChips />
+  if (query.isError) return <LoadError onRetry={() => query.refetch()} />
+
+  return (
+    <div>
+      {options.length > GROUP_SEARCH_THRESHOLD && (
+        <GroupSearchInput value={filter} onChange={setFilter} placeholder="Filter options…" />
+      )}
+      {visible.length === 0 ? (
+        <p className="text-xs text-ink-3">No matching options.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {visible.map((o) => (
+            <OptionChip key={o} active={selected.includes(o)} onClick={() => onToggle(o)}>
+              {o}
+            </OptionChip>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const AUTHOR_RESULTS_LIMIT = 60
+
+function AuthorsOptions({
+  libraryId,
+  selected,
+  enabled,
+  onToggle,
+}: {
+  libraryId?: string
+  selected: AuthorFilter[]
+  enabled: boolean
+  onToggle: (author: AuthorFilter) => void
+}) {
+  const [text, setText] = useState('')
+  const debounced = useDebouncedValue(text, 300)
+  const query = useQuery({
+    queryKey: ['referential', 'authors', libraryId ?? 'all', debounced],
+    queryFn: () => referentialApi.authors({ libraryId, search: debounced.trim() || undefined }),
+    enabled,
+    staleTime: 30_000,
+  })
+
+  const results = (query.data ?? []).filter((a) => !selected.some((s) => s.name === a.name && s.role === a.role))
+  const shown = results.slice(0, AUTHOR_RESULTS_LIMIT)
+
+  return (
+    <div>
+      {selected.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1.5">
+          {selected.map((a) => (
+            <OptionChip key={`${a.name},${a.role}`} active onClick={() => onToggle(a)}>
+              {a.role ? `${a.name} (${a.role})` : a.name}
+              <X className="size-3" />
+            </OptionChip>
+          ))}
+        </div>
+      )}
+      <GroupSearchInput value={text} onChange={setText} placeholder="Search authors…" />
+      {query.isPending ? (
+        <LoadingChips />
+      ) : query.isError ? (
+        <LoadError onRetry={() => query.refetch()} />
+      ) : shown.length === 0 ? (
+        <p className="text-xs text-ink-3">No matching authors.</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {shown.map((a) => (
+            <OptionChip key={`${a.name},${a.role}`} active={false} onClick={() => onToggle({ name: a.name, role: a.role })}>
+              {a.role ? `${a.name} (${a.role})` : a.name}
+            </OptionChip>
+          ))}
+          {results.length > shown.length && (
+            <span className="self-center text-xs text-ink-3">and more, keep typing to narrow down</span>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface FilterGroupSectionProps {
+  def: FilterGroupDef
+  state: FilterState
+  libraryId?: string
+  enabled: boolean
+  onToggleValue: (key: GroupKey, value: string) => void
+  onToggleAuthor: (author: AuthorFilter) => void
+  onSetMode: (key: GroupKey, mode: GroupMode) => void
+}
+
+export function FilterGroupSection({
+  def,
+  state,
+  libraryId,
+  enabled,
+  onToggleValue,
+  onToggleAuthor,
+  onSetMode,
+}: FilterGroupSectionProps) {
+  const values = def.kind === 'authors' ? [] : (state[def.key] as string[])
+  const selectedCount = def.kind === 'authors' ? state.authors.length : values.length
+  const mode: GroupMode = state.matchAll.includes(def.key) ? 'all' : 'any'
+
+  return (
+    <section className="border-b border-line py-4 last:border-b-0">
+      <div className="mb-2.5 flex items-center justify-between gap-2">
+        <h3 className="text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">{def.label}</h3>
+        {selectedCount >= 2 && (
+          <SegmentedControl size="sm" options={MODE_OPTIONS} value={mode} onChange={(m) => onSetMode(def.key, m)} />
+        )}
+      </div>
+      {def.kind === 'enum' && def.options && (
+        <div className="flex flex-wrap gap-1.5">
+          {def.options.map((o) => (
+            <OptionChip key={o.value} active={values.includes(o.value)} onClick={() => onToggleValue(def.key, o.value)}>
+              {o.label}
+            </OptionChip>
+          ))}
+        </div>
+      )}
+      {def.kind === 'referential' && def.referential && (
+        <ReferentialOptions
+          kind={def.referential}
+          libraryId={libraryId}
+          selected={values}
+          enabled={enabled}
+          onToggle={(v) => onToggleValue(def.key, v)}
+        />
+      )}
+      {def.kind === 'authors' && (
+        <AuthorsOptions libraryId={libraryId} selected={state.authors} enabled={enabled} onToggle={onToggleAuthor} />
+      )}
+    </section>
+  )
+}

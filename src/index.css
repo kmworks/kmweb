@@ -1,0 +1,161 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens. Dark is the default theme (reading-first app); `.light` on
+ * <html> swaps the values. Components consume semantic colors only
+ * (bg-bg / bg-surface / text-ink / border-line / accent), never raw scales.
+ *
+ * Shape system: covers rounded-lg, panels rounded-xl, buttons/inputs rounded-lg,
+ * chips and badges rounded-full. One accent (#ff9500) everywhere.
+ *
+ * Z-index scale: 10 sticky bars · 20 drawers · 30 dropdown/popover ·
+ * 40 dialog · 50 toast · reader UI lives in its own fixed stacking context.
+ */
+
+:root {
+  --bg: #0b0b0d;
+  --surface: #131316;
+  --raised: #1b1b1f;
+  --overlay: #232329;
+  --line: rgb(255 255 255 / 0.08);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --ink: #f4f4f5;
+  --ink-2: #a6a6ad;
+  --ink-3: #6e6e76;
+  --accent: #ff9500;
+  --accent-strong: #ffb340;
+  --accent-soft: rgb(255 149 0 / 0.14);
+  --accent-ink: #241500;
+  --danger: #ff5d5d;
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 20px rgb(0 0 0 / 0.28);
+  --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 48px rgb(0 0 0 / 0.42);
+  --brand-gradient: linear-gradient(135deg, #f28e33 0%, #a62ca3 55%, #642891 100%);
+  color-scheme: dark;
+}
+
+:root.light {
+  --bg: #f7f7f5;
+  --surface: #ffffff;
+  --raised: #ffffff;
+  --overlay: #efefec;
+  --line: rgb(28 25 23 / 0.09);
+  --line-strong: rgb(28 25 23 / 0.18);
+  --ink: #1c1c1e;
+  --ink-2: #5c5c62;
+  --ink-3: #8e8e93;
+  --accent: #ff9500;
+  --accent-strong: #d97d00;
+  --accent-soft: rgb(255 149 0 / 0.13);
+  --accent-ink: #2a1a00;
+  --danger: #cf3636;
+  --shadow-card: 0 1px 2px rgb(28 25 23 / 0.07), 0 8px 24px rgb(28 25 23 / 0.09);
+  --shadow-pop: 0 4px 12px rgb(28 25 23 / 0.1), 0 16px 48px rgb(28 25 23 / 0.16);
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-overlay: var(--overlay);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-accent: var(--accent);
+  --color-accent-strong: var(--accent-strong);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --font-sans: 'Geist Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Newsreader Variable', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    scrollbar-color: var(--line-strong) transparent;
+  }
+
+  body {
+    @apply bg-bg font-sans text-ink antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: rgb(255 149 0 / 0.28);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  input[type='search']::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .brand-gradient {
+    background-image: var(--brand-gradient);
+  }
+
+  .cover-aspect {
+    aspect-ratio: 0.7071;
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  .shimmer {
+    background: linear-gradient(
+      100deg,
+      var(--raised) 40%,
+      var(--overlay) 50%,
+      var(--raised) 60%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s linear infinite;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .img-fade {
+    animation: fade-in 0.35s var(--ease-out-expo, ease-out);
+  }
+}
