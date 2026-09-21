@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 export function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className="rounded-xl border border-line bg-surface p-5">
+    <section className="min-w-0 rounded-xl border border-line bg-surface p-5">
       <h2 className="mb-4 text-[15px] font-semibold text-ink">{title}</h2>
       {children}
     </section>
