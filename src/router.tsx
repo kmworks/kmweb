@@ -6,6 +6,7 @@ import { AppShell } from '@/components/layout/AppShell'
 import { LibraryRedirect } from '@/components/layout/LibraryRedirect'
 import { LoginPage } from '@/routes/login'
 import { DashboardPage } from '@/routes/dashboard'
+import { DashboardSectionPage } from '@/routes/dashboard-section'
 import { BrowseSeriesPage } from '@/routes/browse/series'
 import { BrowseBooksPage } from '@/routes/browse/books'
 import { BrowseCollectionsPage } from '@/routes/browse/collections'
@@ -43,8 +44,10 @@ export const router = createBrowserRouter([
         children: [
           { path: '/', element: <Navigate to="/dashboard" replace /> },
           { path: '/dashboard', element: <DashboardPage /> },
+          { path: '/dashboard/sections/:sectionKey', element: <DashboardSectionPage /> },
           { path: '/libraries/:libraryId', element: <LibraryRedirect /> },
           { path: '/libraries/:libraryId/recommended', element: <DashboardPage /> },
+          { path: '/libraries/:libraryId/sections/:sectionKey', element: <DashboardSectionPage /> },
           { path: '/libraries/:libraryId/series', element: <BrowseSeriesPage /> },
           { path: '/libraries/:libraryId/books', element: <BrowseBooksPage /> },
           { path: '/libraries/:libraryId/collections', element: <BrowseCollectionsPage /> },

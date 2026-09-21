@@ -85,7 +85,7 @@ export function HorizontalRow({ title, to, children, className, onEndReached }: 
       <div
         ref={ref}
         onScroll={onScroll}
-        className="no-scrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pt-1.5 pb-2"
+        className="no-scrollbar -mx-2 -mt-2 flex snap-x gap-4 overflow-x-auto px-2 pt-3.5 pb-2"
       >
         {children}
       </div>

@@ -8,6 +8,7 @@ import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { readRoute } from '@/lib/utils/nav'
 import { plural } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
+import { BackButton } from '@/components/ui/BackButton'
 import { Dialog } from '@/components/ui/Dialog'
 import { TextField } from '@/components/ui/TextField'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -134,7 +135,7 @@ export function ReadListDetailPage() {
   })
 
   useEffect(() => {
-    document.title = readlist ? `${readlist.name} · kmrs` : 'kmrs'
+    document.title = readlist ? `${readlist.name} · KMReader` : 'KMReader'
   }, [readlist])
 
   const sentinelRef = useSentinel(
@@ -164,6 +165,7 @@ export function ReadListDetailPage() {
 
   return (
     <div>
+      <BackButton to="/readlists" className="mb-2 -ml-2" />
       <PageHeader
         title={readlist.name}
         subtitle={plural(readlist.bookIds.length, 'book')}

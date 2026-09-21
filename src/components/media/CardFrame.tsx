@@ -18,7 +18,7 @@ export function CardFrame({ to, children, className, label }: CardFrameProps) {
       aria-label={label}
       className={cn(
         'group block cursor-pointer rounded-lg outline-none transition-transform duration-200 ease-out-expo',
-        'hover:-translate-y-1 active:scale-[0.98] active:translate-y-0',
+        'active:scale-[0.98]',
         className,
       )}
     >
