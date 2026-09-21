@@ -1,0 +1,25 @@
+import { cn } from '@/lib/utils/cn'
+
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn('shimmer rounded-lg', className)} />
+}
+
+export function CardSkeleton({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex flex-col gap-2', className)}>
+      <Skeleton className="cover-aspect w-full rounded-lg" />
+      <Skeleton className="h-3.5 w-4/5" />
+      <Skeleton className="h-3 w-3/5" />
+    </div>
+  )
+}
+
+export function GridSkeleton({ count = 12, className }: { count?: number; className?: string }) {
+  return (
+    <div className={cn('grid gap-x-4 gap-y-6', className)} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+      {Array.from({ length: count }, (_, i) => (
+        <CardSkeleton key={i} />
+      ))}
+    </div>
+  )
+}
