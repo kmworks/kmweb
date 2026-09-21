@@ -10,7 +10,7 @@ export function AdminSettingsPage() {
   const query = useQuery({ queryKey: ['admin', 'settings'], queryFn: settingsApi.get })
 
   useEffect(() => {
-    document.title = 'Settings · kmrs'
+    document.title = 'Settings · KMReader'
   }, [])
 
   return (

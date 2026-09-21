@@ -26,7 +26,7 @@ export function AdminUsersPage() {
   const [dialog, setDialog] = useState<DialogState>(null)
 
   useEffect(() => {
-    document.title = 'Users · kmrs'
+    document.title = 'Users · KMReader'
   }, [])
 
   const users = usersQuery.data

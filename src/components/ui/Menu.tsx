@@ -7,9 +7,11 @@ interface MenuProps {
   children: ReactNode
   align?: 'start' | 'center' | 'end'
   side?: 'top' | 'bottom' | 'left' | 'right'
+  /** size the popup to the trigger's width (e.g. the sidebar account button) */
+  matchTriggerWidth?: boolean
 }
 
-export function Menu({ trigger, children, align = 'end', side = 'bottom' }: MenuProps) {
+export function Menu({ trigger, children, align = 'end', side = 'bottom', matchTriggerWidth }: MenuProps) {
   return (
     <RadixMenu.Root>
       <RadixMenu.Trigger asChild>{trigger}</RadixMenu.Trigger>
@@ -20,6 +22,7 @@ export function Menu({ trigger, children, align = 'end', side = 'bottom' }: Menu
           sideOffset={6}
           className={cn(
             'z-30 min-w-44 overflow-hidden rounded-xl border border-line bg-raised p-1 shadow-pop',
+            matchTriggerWidth && 'w-[var(--radix-dropdown-menu-trigger-width)]',
             'data-[state=open]:animate-[fade-in_0.12s_ease-out]',
           )}
         >

@@ -68,7 +68,7 @@ export function SearchPage() {
   }, [input, setSearchParams])
 
   useEffect(() => {
-    document.title = q ? `Search: ${q} · kmrs` : 'Search · kmrs'
+    document.title = q ? `Search: ${q} · KMReader` : 'Search · KMReader'
   }, [q])
 
   const onTabChange = (value: SearchTab) => {

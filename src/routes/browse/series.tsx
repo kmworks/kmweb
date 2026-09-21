@@ -25,7 +25,7 @@ export function BrowseSeriesPage() {
   const title = libraryId ? (library?.name ?? 'Library') : 'All series'
 
   useEffect(() => {
-    document.title = `${title} · kmrs`
+    document.title = `${title} · KMReader`
   }, [title])
 
   const filters = useBrowseFilters()
