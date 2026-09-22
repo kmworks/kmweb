@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils/cn'
+import { useDensityCardWidth } from '@/lib/store/ui'
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn('shimmer rounded-lg', className)} />
@@ -15,8 +16,9 @@ export function CardSkeleton({ className }: { className?: string }) {
 }
 
 export function GridSkeleton({ count = 12, className }: { count?: number; className?: string }) {
+  const min = useDensityCardWidth()
   return (
-    <div className={cn('grid gap-x-4 gap-y-6', className)} style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))' }}>
+    <div className={cn('grid gap-x-4 gap-y-6', className)} style={{ gridTemplateColumns: `repeat(auto-fill, minmax(${min}px, 1fr))` }}>
       {Array.from({ length: count }, (_, i) => (
         <CardSkeleton key={i} />
       ))}

@@ -30,6 +30,7 @@ import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { CoverImage } from '@/components/media/CoverImage'
 import { ReadListCard } from '@/components/media/SeriesCard'
 import { HorizontalRow } from '@/components/media/HorizontalRow'
+import { useDensityCardWidth } from '@/lib/store/ui'
 import { DetailHero } from '@/components/detail/DetailHero'
 import { DetailSkeleton } from '@/components/detail/DetailSkeleton'
 import { DetailError } from '@/components/detail/DetailError'
@@ -56,6 +57,7 @@ export function BookDetailPage() {
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const bust = useBust(bookId)
+  const rowCardWidth = useDensityCardWidth()
   const [addToListOpen, setAddToListOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [postersOpen, setPostersOpen] = useState(false)
@@ -278,7 +280,9 @@ export function BookDetailPage() {
       {readlists.length > 0 && (
         <HorizontalRow title="In read lists" className="mt-10">
           {readlists.map((l) => (
-            <ReadListCard key={l.id} id={l.id} name={l.name} count={l.bookIds.length} className="w-[140px] shrink-0" />
+            <div key={l.id} className="shrink-0" style={{ width: rowCardWidth }}>
+              <ReadListCard id={l.id} name={l.name} count={l.bookIds.length} />
+            </div>
           ))}
         </HorizontalRow>
       )}

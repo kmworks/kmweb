@@ -7,7 +7,7 @@ import { booksApi } from '@/lib/api/books'
 import { collectionsApi, readlistsApi } from '@/lib/api/collections'
 import { seriesApi } from '@/lib/api/series'
 import type { Page } from '@/lib/api/types'
-import { densityScale, useUiStore } from '@/lib/store/ui'
+import { useDensityCardWidth } from '@/lib/store/ui'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
@@ -237,8 +237,7 @@ function PreviewRow<T extends { id: string }>({
   page?: Page<T>
   renderCard: (item: T) => ReactNode
 }) {
-  const density = useUiStore((s) => s.gridDensity)
-  const width = Math.round(140 * densityScale(density))
+  const width = useDensityCardWidth()
   if (!page || page.totalElements === 0) return null
   return (
     <HorizontalRow title={`${title} · ${page.totalElements}`}>
@@ -341,6 +340,7 @@ function SearchError({ error, onRetry }: { error: unknown; onRetry: () => void }
 }
 
 function PreviewSkeleton() {
+  const width = useDensityCardWidth()
   return (
     <div className="space-y-9">
       {[0, 1].map((i) => (
@@ -348,7 +348,9 @@ function PreviewSkeleton() {
           <Skeleton className="mb-3 h-7 w-44" />
           <div className="flex gap-4 overflow-hidden">
             {Array.from({ length: 6 }, (_, j) => (
-              <CardSkeleton key={j} className="w-[140px] shrink-0" />
+              <div key={j} className="shrink-0" style={{ width }}>
+                <CardSkeleton />
+              </div>
             ))}
           </div>
         </div>

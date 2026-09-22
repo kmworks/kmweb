@@ -5,8 +5,7 @@ import type { Page } from '@/lib/api/types'
 import { HorizontalRow } from '@/components/media/HorizontalRow'
 import { CardSkeleton } from '@/components/ui/Skeleton'
 import { Button } from '@/components/ui/Button'
-
-export const dashboardCardWidth = 'w-[140px] shrink-0 snap-start md:w-[152px]'
+import { useDensityCardWidth } from '@/lib/store/ui'
 
 export type PagedRowQuery<T> = UseInfiniteQueryResult<InfiniteData<Page<T>, number>> & { items: T[] }
 
@@ -19,11 +18,14 @@ interface DashboardRowProps<T> {
 }
 
 export function DashboardRow<T>({ title, to, query, keyOf, renderItem }: DashboardRowProps<T>) {
+  const cardWidth = useDensityCardWidth()
   if (query.isPending) {
     return (
       <HorizontalRow title={title} to={to}>
         {Array.from({ length: 5 }, (_, i) => (
-          <CardSkeleton key={i} className={dashboardCardWidth} />
+          <div key={i} className="shrink-0 snap-start" style={{ width: cardWidth }}>
+            <CardSkeleton />
+          </div>
         ))}
       </HorizontalRow>
     )

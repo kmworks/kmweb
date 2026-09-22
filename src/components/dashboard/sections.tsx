@@ -5,7 +5,7 @@ import type { BookDto, Page, SearchCondition, SeriesDto } from '@/lib/api/types'
 import { BookCard } from '@/components/media/BookCard'
 import { KeepReadingCard } from '@/components/media/KeepReadingCard'
 import { SeriesCard } from '@/components/media/SeriesCard'
-import { dashboardCardWidth } from '@/components/dashboard/DashboardRow'
+import { useDensityCardWidth } from '@/lib/store/ui'
 
 const PAGE_SIZE = 20
 
@@ -42,9 +42,27 @@ function libraryConditions(libraryIds: string[] | undefined): SearchCondition[] 
   return [{ anyOf: libraryIds.map((id) => ({ libraryId: { operator: 'is', value: id } }) as SearchCondition) }]
 }
 
-const bookRow = (b: BookDto) => <BookCard book={b} showSeries className={dashboardCardWidth} />
+function BookRowCard({ book }: { book: BookDto }) {
+  const width = useDensityCardWidth()
+  return (
+    <div className="shrink-0 snap-start" style={{ width }}>
+      <BookCard book={book} showSeries />
+    </div>
+  )
+}
+
+function SeriesRowCard({ series }: { series: SeriesDto }) {
+  const width = useDensityCardWidth()
+  return (
+    <div className="shrink-0 snap-start" style={{ width }}>
+      <SeriesCard series={series} />
+    </div>
+  )
+}
+
+const bookRow = (b: BookDto) => <BookRowCard book={b} />
 const bookGrid = (b: BookDto) => <BookCard book={b} showSeries />
-const seriesRow = (s: SeriesDto) => <SeriesCard series={s} className={dashboardCardWidth} />
+const seriesRow = (s: SeriesDto) => <SeriesRowCard series={s} />
 const seriesGrid = (s: SeriesDto) => <SeriesCard series={s} />
 
 export const DASHBOARD_SECTIONS = {
