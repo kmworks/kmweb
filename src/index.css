@@ -29,7 +29,7 @@
   --danger: #ff5d5d;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 20px rgb(0 0 0 / 0.28);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 48px rgb(0 0 0 / 0.42);
-  --brand-gradient: linear-gradient(135deg, #f28e33 0%, #a62ca3 55%, #642891 100%);
+  --brand-gradient: linear-gradient(135deg, #ff9500 0%, #d97d00 100%);
   color-scheme: dark;
 }
 
