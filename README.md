@@ -45,9 +45,3 @@ first/last page, `L`/`R`/`V`/`W` reading direction, `C` scale, `D` page
 layout, `F` fullscreen, `M` menu, `S` settings, `T` thumbnails, `H` help,
 `Esc` close/back. Webtoon: `Space`/`PageUp`/`PageDown` scroll, `P` side
 padding, `N` page gap.
-
-## Legacy
-
-Releases tagged `komga-webui/v<upstream-version>` carry prebuilt
-[komga-webui](https://github.com/gotson/komga) `npm run build` output as
-`komga-webui-v<upstream-version>.tar.gz` assets.
