@@ -1,7 +1,7 @@
-import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useRef, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
-import { CaretRight, CircleNotch, MagnifyingGlass, WarningCircle, X } from '@phosphor-icons/react'
+import { CaretRight, CircleNotch, MagnifyingGlass, WarningCircle } from '@phosphor-icons/react'
 import { motion, useReducedMotion } from 'motion/react'
 import { booksApi } from '@/lib/api/books'
 import { collectionsApi, readlistsApi } from '@/lib/api/collections'
@@ -40,36 +40,6 @@ export function SearchPage() {
   const q = qRaw.trim()
   const tab = parseTab(searchParams.get('tab'))
 
-  const [input, setInput] = useState(qRaw)
-  // last value this field pushed to the URL; divergence means the change came
-  // from outside (top-bar search, back/forward) and must be synced back in
-  const lastPushed = useRef(qRaw)
-
-  useEffect(() => {
-    if (qRaw !== lastPushed.current) {
-      lastPushed.current = qRaw
-      setInput(qRaw)
-    }
-  }, [qRaw])
-
-  useEffect(() => {
-    const v = input.trim()
-    if (v === lastPushed.current.trim()) return
-    const t = setTimeout(() => {
-      lastPushed.current = v
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev)
-          if (v) next.set('q', v)
-          else next.delete('q')
-          return next
-        },
-        { replace: true },
-      )
-    }, 400)
-    return () => clearTimeout(t)
-  }, [input, setSearchParams])
-
   useEffect(() => {
     document.title = q ? `Search: ${q} · KMReader` : 'Search · KMReader'
   }, [q])
@@ -97,29 +67,6 @@ export function SearchPage() {
 
   return (
     <div>
-      <div className="relative mb-5 max-w-2xl">
-        <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3.5 size-4.5 -translate-y-1/2 text-ink-3" />
-        <input
-          type="search"
-          autoFocus
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Search series, books, collections, read lists…"
-          aria-label="Search"
-          className="h-12 w-full rounded-lg border border-line bg-surface pr-11 pl-10 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
-        />
-        {input && (
-          <button
-            type="button"
-            aria-label="Clear search"
-            onClick={() => setInput('')}
-            className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-ink-3 transition-colors hover:text-ink"
-          >
-            <X className="size-4.5" />
-          </button>
-        )}
-      </div>
-
       <div className="mb-7 overflow-x-auto pb-1">
         <SegmentedControl<SearchTab> options={[...TABS]} value={tab} onChange={onTabChange} />
       </div>
