@@ -496,3 +496,310 @@ export interface BookSearch {
   condition?: SearchCondition
   fullTextSearch?: string
 }
+
+// ---- Metadata updates (PATCH bodies) ----
+
+export interface WebLinkUpdateDto {
+  label?: string
+  url?: string
+}
+
+export interface AlternateTitleUpdateDto {
+  label?: string
+  title?: string
+}
+
+export interface AuthorUpdateDto {
+  name?: string
+  role?: string
+}
+
+/**
+ * Patch semantics: omitted fields keep their current value. Collection and nullable fields are
+ * isSet-tracked: sending null clears them, while explicit null on plain fields is a no-op.
+ */
+export interface SeriesMetadataUpdateDto {
+  status?: SeriesStatus
+  statusLock?: boolean
+  title?: string
+  titleLock?: boolean
+  titleSort?: string
+  titleSortLock?: boolean
+  summary?: string
+  summaryLock?: boolean
+  publisher?: string
+  publisherLock?: boolean
+  readingDirection?: ReadingDirection | null
+  readingDirectionLock?: boolean
+  ageRating?: number | null
+  ageRatingLock?: boolean
+  language?: string
+  languageLock?: boolean
+  genres?: string[] | null
+  genresLock?: boolean
+  tags?: string[] | null
+  tagsLock?: boolean
+  totalBookCount?: number | null
+  totalBookCountLock?: boolean
+  sharingLabels?: string[] | null
+  sharingLabelsLock?: boolean
+  links?: WebLinkUpdateDto[] | null
+  linksLock?: boolean
+  alternateTitles?: AlternateTitleUpdateDto[] | null
+  alternateTitlesLock?: boolean
+}
+
+/** Same patch semantics as SeriesMetadataUpdateDto. */
+export interface BookMetadataUpdateDto {
+  title?: string
+  titleLock?: boolean
+  summary?: string | null
+  summaryLock?: boolean
+  number?: string
+  numberLock?: boolean
+  numberSort?: number
+  numberSortLock?: boolean
+  releaseDate?: string | null
+  releaseDateLock?: boolean
+  authors?: AuthorUpdateDto[] | null
+  authorsLock?: boolean
+  tags?: string[] | null
+  tagsLock?: boolean
+  isbn?: string | null
+  isbnLock?: boolean
+  links?: WebLinkUpdateDto[] | null
+  linksLock?: boolean
+}
+
+// ---- Thumbnails ----
+
+export type ThumbnailType = 'GENERATED' | 'SIDECAR' | 'USER_UPLOADED'
+
+export interface ThumbnailSeriesDto {
+  id: string
+  seriesId: string
+  type: ThumbnailType
+  selected: boolean
+  mediaType: string
+  fileSize: number
+  width: number
+  height: number
+}
+
+export interface ThumbnailBookDto {
+  id: string
+  bookId: string
+  type: ThumbnailType
+  selected: boolean
+  mediaType: string
+  fileSize: number
+  width: number
+  height: number
+}
+
+export interface ThumbnailSeriesCollectionDto {
+  id: string
+  collectionId: string
+  type: ThumbnailType
+  selected: boolean
+  mediaType: string
+  fileSize: number
+  width: number
+  height: number
+}
+
+export interface ThumbnailReadListDto {
+  id: string
+  readListId: string
+  type: ThumbnailType
+  selected: boolean
+  mediaType: string
+  fileSize: number
+  width: number
+  height: number
+}
+
+// ---- Admin: page hashes (duplicate pages) ----
+
+export type PageHashAction = 'DELETE_AUTO' | 'DELETE_MANUAL' | 'IGNORE'
+
+export interface PageHashKnownDto {
+  hash: string
+  size: number | null
+  action: PageHashAction
+  deleteCount: number
+  matchCount: number
+  created: string
+  lastModified: string
+}
+
+export interface PageHashUnknownDto {
+  hash: string
+  size: number | null
+  matchCount: number
+}
+
+export interface PageHashMatchDto {
+  bookId: string
+  url: string
+  pageNumber: number
+  fileName: string
+  fileSize: number
+  mediaType: string
+}
+
+export interface PageHashCreationDto {
+  hash: string
+  size?: number | null
+  action: PageHashAction
+}
+
+// ---- Admin: history ----
+
+export type HistoricalEventType =
+  | 'BookFileDeleted'
+  | 'SeriesFolderDeleted'
+  | 'BookConverted'
+  | 'BookImported'
+  | 'DuplicatePageDeleted'
+
+export interface HistoricalEventDto {
+  id: string
+  type: HistoricalEventType
+  timestamp: string
+  bookId: string | null
+  seriesId: string | null
+  properties: Record<string, string>
+}
+
+// ---- Admin: transient books ----
+
+export interface TransientBookDto {
+  id: string
+  name: string
+  url: string
+  fileLastModified: string
+  sizeBytes: number
+  size: string
+  status: string
+  mediaType: string
+  pages: PageDto[]
+  files: string[]
+  comment: string
+  number: number | null
+  seriesId: string | null
+}
+
+// ---- Client settings ----
+
+export interface ClientSettingDto {
+  value: string
+  allowUnauthorized?: boolean
+}
+
+export interface ClientSettingGlobalUpdateDto {
+  value: string
+  allowUnauthorized: boolean
+}
+
+export interface ClientSettingUserUpdateDto {
+  value: string
+}
+
+// ---- Admin: announcements (JSON Feed proxy; field names are the feed's own snake_case) ----
+
+export interface JsonFeedDto {
+  version: string
+  title: string
+  home_page_url?: string
+  description?: string
+  items: FeedItemDto[]
+}
+
+export interface FeedItemDto {
+  id: string
+  url?: string
+  title?: string
+  summary?: string
+  content_html?: string
+  date_modified?: string
+  author?: FeedAuthorDto
+  tags: string[]
+  _komga?: KomgaExtensionDto
+}
+
+export interface FeedAuthorDto {
+  name?: string
+  url?: string
+}
+
+export interface KomgaExtensionDto {
+  read: boolean
+}
+
+// ---- Admin: releases ----
+
+export interface ReleaseDto {
+  version: string
+  releaseDate: string
+  url: string
+  latest: boolean
+  preRelease: boolean
+  description: string
+}
+
+// ---- Admin: book import ----
+
+export type CopyMode = 'MOVE' | 'COPY' | 'HARDLINK'
+
+export interface BookImportDto {
+  sourceFile: string
+  seriesId: string
+  upgradeBookId?: string
+  destinationName?: string
+}
+
+export interface BookImportBatchDto {
+  books: BookImportDto[]
+  copyMode: CopyMode
+}
+
+// ---- Admin: readlist ComicRack matching ----
+
+export interface ReadListRequestMatchDto {
+  readListMatch: ReadListMatchDto
+  requests: ReadListRequestBookMatchesDto[]
+  errorCode: string
+}
+
+export interface ReadListMatchDto {
+  name: string
+  errorCode: string
+}
+
+export interface ReadListRequestBookMatchesDto {
+  request: ReadListRequestBookDto
+  matches: ReadListRequestBookMatchDto[]
+}
+
+export interface ReadListRequestBookDto {
+  series: string[]
+  number: string
+}
+
+export interface ReadListRequestBookMatchDto {
+  series: ReadListRequestBookMatchSeriesDto
+  books: ReadListRequestBookMatchBookDto[]
+}
+
+export interface ReadListRequestBookMatchSeriesDto {
+  seriesId: string
+  title: string
+  releaseDate: string | null
+}
+
+export interface ReadListRequestBookMatchBookDto {
+  bookId: string
+  number: string
+  title: string
+}

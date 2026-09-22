@@ -45,7 +45,7 @@ export const usersApi = {
   claimStatus: () => api.get<ClaimStatus>('/api/v1/claim'),
 
   authenticationActivity: (params?: { page?: number; size?: number }) =>
-    api.get<Page<import('./types').AuthenticationActivityDto>>('/api/v2/users/me/authentication-activity', params),
+    api.get<Page<AuthenticationActivityDto>>('/api/v2/users/me/authentication-activity', params),
 
   // Admin operations
   list: () => api.get<UserDto[]>('/api/v2/users'),

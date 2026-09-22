@@ -31,4 +31,6 @@ export const actuatorApi = {
   scheduledTasks: () => api.get<ScheduledTasksDto>('/actuator/scheduledtasks'),
   sessions: (username?: string) => api.get<{ sessions: SessionDto[] }>('/actuator/sessions', { username }),
   deleteSession: (sessionId: string) => api.delete<void>(`/actuator/sessions/${sessionId}`),
+  logfileUrl: () => '/actuator/logfile',
+  shutdown: () => api.post<{ message: string }>('/actuator/shutdown'),
 }

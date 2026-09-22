@@ -5,15 +5,25 @@ import {
   Books,
   BookBookmark,
   BookmarkSimple,
+  ClockCounterClockwise,
+  Copy,
+  FileMagnifyingGlass,
   Gauge,
   GearSix,
   HardDrives,
   House,
+  ImageBroken,
+  Images,
   List,
   MagnifyingGlass,
+  Megaphone,
   Moon,
+  Palette,
+  Playlist,
+  Rocket,
   SignOut,
   Sun,
+  TrayArrowDown,
   UserCircle,
   Users,
   CaretDown,
@@ -118,6 +128,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {isAdmin(user) && (
           <>
             <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
+              Import
+            </div>
+            <NavItem to="/import/books" icon={<TrayArrowDown />} onClick={onNavigate}>
+              Import books
+            </NavItem>
+            <NavItem to="/import/readlist" icon={<Playlist />} onClick={onNavigate}>
+              Import readlist
+            </NavItem>
+
+            <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
               Administration
             </div>
             <NavItem to="/admin/libraries" icon={<HardDrives />} onClick={onNavigate}>
@@ -131,6 +151,30 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </NavItem>
             <NavItem to="/admin/server" icon={<Gauge />} onClick={onNavigate}>
               Server
+            </NavItem>
+            <NavItem to="/admin/duplicates" icon={<Copy />} onClick={onNavigate}>
+              Duplicates
+            </NavItem>
+            <NavItem to="/admin/duplicate-pages" icon={<Images />} onClick={onNavigate}>
+              Duplicate pages
+            </NavItem>
+            <NavItem to="/admin/media-analysis" icon={<FileMagnifyingGlass />} onClick={onNavigate}>
+              Media analysis
+            </NavItem>
+            <NavItem to="/admin/missing-posters" icon={<ImageBroken />} onClick={onNavigate}>
+              Missing posters
+            </NavItem>
+            <NavItem to="/admin/history" icon={<ClockCounterClockwise />} onClick={onNavigate}>
+              History
+            </NavItem>
+            <NavItem to="/admin/announcements" icon={<Megaphone />} onClick={onNavigate}>
+              Announcements
+            </NavItem>
+            <NavItem to="/admin/updates" icon={<Rocket />} onClick={onNavigate}>
+              Updates
+            </NavItem>
+            <NavItem to="/admin/ui" icon={<Palette />} onClick={onNavigate}>
+              UI settings
             </NavItem>
           </>
         )}

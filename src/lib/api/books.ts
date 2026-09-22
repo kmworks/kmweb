@@ -1,5 +1,14 @@
 import { api, pageQuery } from './client'
-import type { BookDto, BookSearch, Page, PageDto, PageParams, ReadListDto } from './types'
+import type {
+  BookDto,
+  BookImportBatchDto,
+  BookMetadataUpdateDto,
+  BookSearch,
+  Page,
+  PageDto,
+  PageParams,
+  ReadListDto,
+} from './types'
 
 export interface BookListQuery extends PageParams {
   search?: BookSearch
@@ -28,4 +37,14 @@ export const booksApi = {
 
   markUnread: (bookId: string) => api.delete<void>(`/api/v1/books/${bookId}/read-progress`),
   markRead: (bookId: string) => api.patch<void>(`/api/v1/books/${bookId}/read-progress`, { completed: true }),
+
+  // Admin operations
+  patchMetadata: (bookId: string, body: BookMetadataUpdateDto) =>
+    api.patch<void>(`/api/v1/books/${bookId}/metadata`, body),
+  /** Batch metadata patch: maps book id to its update. */
+  bulkPatchMetadata: (body: Record<string, BookMetadataUpdateDto>) =>
+    api.patch<void>('/api/v1/books/metadata', body),
+  deleteFile: (bookId: string) => api.delete<void>(`/api/v1/books/${bookId}/file`),
+  duplicates: (params?: PageParams) => api.get<Page<BookDto>>('/api/v1/books/duplicates', pageQuery(params)),
+  importBooks: (body: BookImportBatchDto) => api.post<void>('/api/v1/books/import', body),
 }
