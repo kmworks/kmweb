@@ -39,7 +39,7 @@ function GroupSearchInput({ value, onChange, placeholder }: { value: string; onC
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="mb-2 h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-xs text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+      className="mb-2 h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
     />
   )
 }

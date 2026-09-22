@@ -79,6 +79,8 @@
 @layer base {
   html {
     scrollbar-color: var(--line-strong) transparent;
+    /* kill double-tap zoom and the tap delay; containers that pan or pinch set their own touch-action */
+    touch-action: manipulation;
   }
 
   body {

@@ -265,7 +265,7 @@ export function ImportReadListPage() {
                                 const c = r.candidates.find((c) => c.bookId === e.target.value)
                                 if (c) patchRow(index, { selected: c, manual: true })
                               }}
-                              className="h-8 w-full max-w-64 cursor-pointer rounded-lg border border-line bg-surface px-2 text-sm text-ink focus:border-accent/70 focus:outline-none"
+                              className="h-8 w-full max-w-64 cursor-pointer rounded-lg border border-line bg-surface px-2 text-base text-ink focus:border-accent/70 focus:outline-none"
                             >
                               <option value="" disabled>
                                 Choose a book…

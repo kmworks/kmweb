@@ -275,7 +275,7 @@ function PathField({
           placeholder="/path/to/folder"
           aria-invalid={!!error}
           className={cn(
-            'h-10 min-w-0 flex-1 rounded-lg border bg-surface px-3 font-mono text-[13px] text-ink transition-colors',
+            'h-10 min-w-0 flex-1 rounded-lg border bg-surface px-3 font-mono text-base text-ink transition-colors',
             'placeholder:text-ink-3 focus:outline-none',
             error ? 'border-danger/60 focus:border-danger' : 'border-line focus:border-accent/70',
           )}
@@ -321,7 +321,7 @@ function ExclusionsEditor({ value, onChange }: { value: string[]; onChange: (v: 
           }}
           spellCheck={false}
           placeholder="e.g. @eaDir"
-          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 font-mono text-[13px] text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+          className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 font-mono text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
         />
         <Button type="button" onClick={add} disabled={!text.trim()}>
           Add

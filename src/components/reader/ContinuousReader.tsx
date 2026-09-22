@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useReducedMotion } from 'motion/react'
 import { useReaderSettings } from '@/lib/store/readerSettings'
 import type { SpreadPage } from '@/lib/utils/spreads'
 import { useWindowKeys } from './keys'
+import { usePinchZoom } from './usePinchZoom'
 
 interface ContinuousReaderProps {
   pages: SpreadPage[]
@@ -26,6 +27,13 @@ export function ContinuousReader({
   const margin = useReaderSettings((s) => s.continuousMargin)
   const animations = useReaderSettings((s) => s.animations)
   const reduceMotion = useReducedMotion()
+
+  const pinch = usePinchZoom({ zoomedTouchAction: 'pan-y' })
+  const { reset: resetPinch } = pinch
+  // fit/padding changes shift the strip geometry and leave stale pan offsets behind
+  useLayoutEffect(() => {
+    resetPinch()
+  }, [scale, padding, margin, resetPinch])
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const currentRef = useRef(page)
@@ -110,6 +118,12 @@ export function ContinuousReader({
 
   // click regions instead of overlay zones: overlays would swallow wheel scrolling
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (pinch.consumeClick()) return
+    // while zoomed a tap only toggles chrome; a scroll jump would dump the zoom
+    if (pinch.zoomed) {
+      onToggleChrome()
+      return
+    }
     const rect = e.currentTarget.getBoundingClientRect()
     const ratio = (e.clientY - rect.top) / rect.height
     if (ratio < 0.25) prev()
@@ -119,30 +133,41 @@ export function ContinuousReader({
 
   return (
     <div
-      ref={scrollRef}
-      onScroll={onScroll}
+      className="h-full overflow-hidden"
+      style={{ touchAction: pinch.touchAction }}
       onClick={onClick}
-      className="h-full overflow-y-auto overscroll-none no-scrollbar"
+      onPointerDown={pinch.onPointerDown}
+      onPointerMove={pinch.onPointerMove}
+      onPointerUp={pinch.onPointerUp}
+      onPointerCancel={pinch.onPointerCancel}
     >
-      {pages.map((p, i) => {
-        const load = i === 0 || seen[i] || Math.abs(i + 1 - page) <= 2
-        return (
-          <div
-            key={p.number}
-            data-page={p.number}
-            className="mx-auto"
-            style={{
-              width: scale === 'WIDTH' ? `${100 - padding * 2}%` : p.width ? p.width : undefined,
-              marginTop: i === 0 ? 0 : margin,
-              aspectRatio: p.width && p.height ? `${p.width} / ${p.height}` : undefined,
-            }}
-          >
-            {load && (
-              <img src={p.url} alt={`Page ${p.number}`} draggable={false} className="block h-auto w-full" />
-            )}
-          </div>
-        )
-      })}
+      <div
+        ref={pinch.targetRef}
+        className="h-full"
+        style={{ transformOrigin: '0 0', willChange: pinch.zoomed ? 'transform' : undefined }}
+      >
+        <div ref={scrollRef} onScroll={onScroll} className="h-full overflow-y-auto overscroll-none no-scrollbar">
+          {pages.map((p, i) => {
+            const load = i === 0 || seen[i] || Math.abs(i + 1 - page) <= 2
+            return (
+              <div
+                key={p.number}
+                data-page={p.number}
+                className="mx-auto"
+                style={{
+                  width: scale === 'WIDTH' ? `${100 - padding * 2}%` : p.width ? p.width : undefined,
+                  marginTop: i === 0 ? 0 : margin,
+                  aspectRatio: p.width && p.height ? `${p.width} / ${p.height}` : undefined,
+                }}
+              >
+                {load && (
+                  <img src={p.url} alt={`Page ${p.number}`} draggable={false} className="block h-auto w-full" />
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
     </div>
   )
 }

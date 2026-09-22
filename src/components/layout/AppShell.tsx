@@ -294,7 +294,7 @@ function TopSearchBox() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search series, books, authors…"
-        className="h-9 w-full rounded-lg border border-line bg-surface pr-12 pl-9 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+        className="h-9 w-full rounded-lg border border-line bg-surface pr-12 pl-9 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
       />
       <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border border-line bg-raised px-1.5 text-[11px] text-ink-3">
         /

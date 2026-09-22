@@ -26,7 +26,7 @@ export function TextInput({ error, className, ...rest }: TextInputProps) {
     <input
       aria-invalid={!!error}
       className={cn(
-        'h-10 w-full rounded-lg border bg-surface px-3 text-sm text-ink transition-colors',
+        'h-10 w-full rounded-lg border bg-surface px-3 text-base text-ink transition-colors',
         'placeholder:text-ink-3 focus:outline-none',
         error ? 'border-danger/60 focus:border-danger' : 'border-line focus:border-accent/70',
         className,
@@ -67,7 +67,7 @@ export function TextAreaField({ label, value, onChange, error, helper, placehold
         aria-label={ariaLabel}
         aria-invalid={!!error}
         className={cn(
-          'w-full resize-y rounded-lg border bg-surface px-3 py-2 text-sm text-ink transition-colors',
+          'w-full resize-y rounded-lg border bg-surface px-3 py-2 text-base text-ink transition-colors',
           'placeholder:text-ink-3 focus:outline-none',
           error ? 'border-danger/60 focus:border-danger' : 'border-line focus:border-accent/70',
         )}

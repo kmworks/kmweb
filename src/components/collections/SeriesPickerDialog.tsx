@@ -94,7 +94,7 @@ export function SeriesPickerDialog({
             onChange={(e) => setText(e.target.value)}
             placeholder="Search series…"
             autoFocus
-            className="h-9 w-full rounded-lg border border-line bg-surface pr-3 pl-9 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+            className="h-9 w-full rounded-lg border border-line bg-surface pr-3 pl-9 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
           />
         </div>
       </div>

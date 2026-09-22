@@ -78,7 +78,7 @@ export function AddToReadListDialog({ open, onOpenChange, bookIds, onDone }: Add
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter read lists…"
-          className="h-9 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+          className="h-9 w-full rounded-lg border border-line bg-surface px-3 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
         />
       </div>
       <div className="max-h-64 overflow-y-auto py-2">

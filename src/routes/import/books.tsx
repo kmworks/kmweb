@@ -301,7 +301,7 @@ export function ImportBooksPage() {
                           value={r.number}
                           onChange={(e) => patchRow(r.id, { number: e.target.value })}
                           placeholder="#"
-                          className="h-8 w-20 rounded-lg border border-line bg-surface px-2 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+                          className="h-8 w-20 rounded-lg border border-line bg-surface px-2 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
                         />
                       </td>
                       <td className="px-3 py-2.5">
@@ -309,7 +309,7 @@ export function ImportBooksPage() {
                           type="text"
                           value={r.destinationName}
                           onChange={(e) => patchRow(r.id, { destinationName: e.target.value })}
-                          className="h-8 w-full min-w-48 rounded-lg border border-line bg-surface px-2 font-mono text-[13px] text-ink transition-colors focus:border-accent/70 focus:outline-none"
+                          className="h-8 w-full min-w-48 rounded-lg border border-line bg-surface px-2 font-mono text-base text-ink transition-colors focus:border-accent/70 focus:outline-none"
                         />
                       </td>
                       <td className="px-3 py-2.5 text-right">

@@ -76,7 +76,7 @@ function EditReadListDialog({
             rows={3}
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
-            className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+            className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
           />
         </div>
         <div className="flex justify-end gap-2">
