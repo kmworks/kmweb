@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BookBookmark,
@@ -36,6 +36,7 @@ import {
   UserCircle,
   Users,
   Wrench,
+  X,
 } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils/cn'
@@ -337,21 +338,24 @@ function SidebarFooter() {
   )
 }
 
-function TopSearchBox() {
-  const navigate = useNavigate()
-  const [q, setQ] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-
+function useSlashFocus(ref: React.RefObject<HTMLInputElement | null>) {
   useEffect(() => {
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key === '/' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)) {
         e.preventDefault()
-        inputRef.current?.focus()
+        ref.current?.focus()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [])
+  }, [ref])
+}
+
+function TopSearchBox() {
+  const navigate = useNavigate()
+  const [q, setQ] = useState('')
+  const inputRef = useRef<HTMLInputElement>(null)
+  useSlashFocus(inputRef)
 
   return (
     <form
@@ -374,6 +378,74 @@ function TopSearchBox() {
         /
       </kbd>
     </form>
+  )
+}
+
+// on /search the header box is the page's only search input: it edits the ?q=
+// param live so page and box can never diverge
+function SyncedSearchBox() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const qRaw = searchParams.get('q') ?? ''
+  const [input, setInput] = useState(qRaw)
+  // last value this field pushed to the URL; divergence means the change came
+  // from outside (back/forward) and must be synced back in
+  const lastPushed = useRef(qRaw)
+  const inputRef = useRef<HTMLInputElement>(null)
+  useSlashFocus(inputRef)
+
+  useEffect(() => {
+    if (qRaw !== lastPushed.current) {
+      lastPushed.current = qRaw
+      setInput(qRaw)
+    }
+  }, [qRaw])
+
+  useEffect(() => {
+    const v = input.trim()
+    if (v === lastPushed.current.trim()) return
+    const t = setTimeout(() => {
+      lastPushed.current = v
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          if (v) next.set('q', v)
+          else next.delete('q')
+          return next
+        },
+        { replace: true },
+      )
+    }, 400)
+    return () => clearTimeout(t)
+  }, [input, setSearchParams])
+
+  return (
+    <div className="relative w-full max-w-lg">
+      <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-3" />
+      <input
+        ref={inputRef}
+        type="search"
+        autoFocus
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Search series, books, collections, read lists…"
+        aria-label="Search"
+        className="h-9 w-full rounded-lg border border-line bg-surface pr-12 pl-9 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+      />
+      {input ? (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={() => setInput('')}
+          className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer text-ink-3 transition-colors hover:text-ink"
+        >
+          <X className="size-4" />
+        </button>
+      ) : (
+        <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border border-line bg-raised px-1.5 text-[11px] text-ink-3">
+          /
+        </kbd>
+      )}
+    </div>
   )
 }
 
@@ -450,6 +522,7 @@ function AppearanceMenu() {
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const navigate = useNavigate()
+  const onSearchPage = useLocation().pathname.startsWith('/search')
 
   return (
     <div className="flex min-h-dvh bg-bg">
@@ -487,13 +560,21 @@ export function AppShell() {
           <IconButton label="Menu" className="lg:hidden" onClick={() => setDrawerOpen(true)}>
             <List className="size-5" />
           </IconButton>
-          <div className="hidden flex-1 md:block">
-            <TopSearchBox />
-          </div>
-          <div className="flex-1 md:hidden" />
-          <IconButton label="Search" className="md:hidden" onClick={() => navigate('/search')}>
-            <MagnifyingGlass className="size-5" />
-          </IconButton>
+          {onSearchPage ? (
+            <div className="min-w-0 flex-1">
+              <SyncedSearchBox />
+            </div>
+          ) : (
+            <>
+              <div className="hidden flex-1 md:block">
+                <TopSearchBox />
+              </div>
+              <div className="flex-1 md:hidden" />
+              <IconButton label="Search" className="md:hidden" onClick={() => navigate('/search')}>
+                <MagnifyingGlass className="size-5" />
+              </IconButton>
+            </>
+          )}
           <ThemeButton />
           <AppearanceMenu />
         </header>
