@@ -60,8 +60,10 @@ jobs:
           # the bundle is served straight out of the tarball (kmrs ADDs it as
           # its webui dir), so index.html must sit at the root
           tar -tzf "dist-release/${stage}.tar.gz" | grep -qx './index.html'
-          sha256sum "dist-release/${stage}.tar.gz" > "dist-release/${stage}.sha256"
-          cat "dist-release/${stage}.sha256"
+          # name the checksum after the tarball and keep the path a basename,
+          # so `sha256sum -c` works in a plain download directory
+          (cd dist-release && sha256sum "${stage}.tar.gz" > "${stage}.tar.gz.sha256")
+          cat "dist-release/${stage}.tar.gz.sha256"
       - uses: actions/upload-artifact@v7
         with:
           name: kmweb
