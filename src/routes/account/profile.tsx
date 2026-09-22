@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useAuthStore } from '@/lib/store/auth'
 import { PageHeader } from '@/components/ui/PageHeader'
-import { AboutSection } from '@/components/account/AboutSection'
 import { ProfileSection } from '@/components/account/ProfileSection'
 
 export function AccountProfilePage() {
@@ -16,7 +15,6 @@ export function AccountProfilePage() {
       <PageHeader title="Profile" subtitle={user?.email} />
       <div className="space-y-6">
         <ProfileSection />
-        <AboutSection />
       </div>
     </div>
   )
