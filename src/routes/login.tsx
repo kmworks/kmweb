@@ -91,12 +91,8 @@ export function LoginPage() {
 
       {/* form panel */}
       <div className="flex flex-col items-center justify-center px-6 py-12">
-        <div className="mb-10 flex flex-col items-center gap-3 lg:hidden">
-          <LogoMark className="size-18" />
-          <span className="font-display text-3xl font-semibold tracking-tight">KMReader</span>
-        </div>
-
         <div className="w-full max-w-sm">
+          <LogoMark className="mb-10 size-18 lg:hidden" />
           <h2 className="font-display text-3xl font-semibold tracking-tight">
             {claimMode ? 'Claim this server' : 'Welcome back'}
           </h2>
