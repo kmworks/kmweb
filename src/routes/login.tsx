@@ -73,7 +73,8 @@ export function LoginPage() {
       <div className="brand-gradient relative hidden flex-col justify-between overflow-hidden p-12 lg:flex">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgb(0_0_0/0.35),transparent_60%)]" />
         <div className="relative flex items-center gap-3">
-          <span className="flex size-9 items-center justify-center rounded-lg bg-white shadow-lg">
+          {/* measured optical offset: centers the badge on the wordmark's cap-top–baseline midline (Newsreader text-3xl) */}
+          <span className="flex size-9 -translate-y-1 items-center justify-center rounded-lg bg-white shadow-lg">
             <LogoMark className="size-7" />
           </span>
           <span className="font-display text-3xl font-semibold tracking-tight text-white">KMReader</span>

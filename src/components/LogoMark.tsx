@@ -2,13 +2,13 @@ import { useId } from 'react'
 
 /**
  * The KMReader book glyph (same artwork as kmreader/icon.svg).
- * viewBox y-offset 218 keeps the top-heavy glyph optically centered: its bbox
- * center sits 2.7% of frame height below the frame center, same as the app icon.
+ * viewBox drops the glyph ~4% below geometric center: the book body is
+ * top-heavy, so a bbox-centered mark reads as floating high in a container.
  */
 export function LogoMark({ className }: { className?: string }) {
   const id = useId()
   return (
-    <svg viewBox="206 218 1635 1635" className={className} aria-hidden="true">
+    <svg viewBox="206 200 1635 1635" className={className} aria-hidden="true">
       <defs>
         <linearGradient id={id} x1="1840.258343" y1="375.237972" x2="207.000006" y2="1783.000031" gradientUnits="userSpaceOnUse">
           <stop offset="0.00001" stopColor="#FF9500" />
