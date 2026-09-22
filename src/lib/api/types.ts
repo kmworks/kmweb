@@ -706,37 +706,6 @@ export interface ClientSettingUserUpdateDto {
   value: string
 }
 
-// ---- Admin: announcements (JSON Feed proxy; field names are the feed's own snake_case) ----
-
-export interface JsonFeedDto {
-  version: string
-  title: string
-  home_page_url?: string
-  description?: string
-  items: FeedItemDto[]
-}
-
-export interface FeedItemDto {
-  id: string
-  url?: string
-  title?: string
-  summary?: string
-  content_html?: string
-  date_modified?: string
-  author?: FeedAuthorDto
-  tags: string[]
-  _komga?: KomgaExtensionDto
-}
-
-export interface FeedAuthorDto {
-  name?: string
-  url?: string
-}
-
-export interface KomgaExtensionDto {
-  read: boolean
-}
-
 // ---- Admin: releases ----
 
 export interface ReleaseDto {

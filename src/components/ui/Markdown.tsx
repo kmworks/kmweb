@@ -1,3 +1,5 @@
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { cn } from '@/lib/utils/cn'
 
 const prose = [
@@ -15,9 +17,23 @@ const prose = [
   '[&_blockquote]:my-3 [&_blockquote]:border-l-2 [&_blockquote]:border-line-strong [&_blockquote]:pl-3 [&_blockquote]:text-ink-3',
   '[&_hr]:my-4 [&_hr]:border-line',
   '[&_strong]:text-ink [&_strong]:font-semibold',
+  '[&_table]:my-3 [&_table]:w-full [&_table]:border-collapse',
+  '[&_th]:border [&_th]:border-line [&_th]:bg-raised [&_th]:px-2.5 [&_th]:py-1.5 [&_th]:text-left [&_th]:font-medium [&_th]:text-ink',
+  '[&_td]:border [&_td]:border-line [&_td]:px-2.5 [&_td]:py-1.5',
 ].join(' ')
 
-/** Trusted server-proxied feed HTML; there is no markdown/HTML renderer dependency. */
-export function HtmlContent({ html, className }: { html: string; className?: string }) {
-  return <div className={cn(prose, className)} dangerouslySetInnerHTML={{ __html: html }} />
+export function MarkdownContent({ markdown, className }: { markdown: string; className?: string }) {
+  return (
+    <div className={cn(prose, className)}>
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          // release notes link out to GitHub; never navigate the app away
+          a: ({ node: _node, ...props }) => <a {...props} target="_blank" rel="noreferrer" />,
+        }}
+      >
+        {markdown}
+      </ReactMarkdown>
+    </div>
+  )
 }
