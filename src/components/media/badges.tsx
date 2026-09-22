@@ -21,7 +21,7 @@ export function UnreadBadge({ count, className }: { count: number; className?: s
     <span
       className={cn(
         'pointer-events-none absolute -top-1.5 -right-1.5 z-10 flex h-5.5 min-w-5.5 items-center justify-center rounded-full px-1.5',
-        'bg-accent text-[11px] font-semibold text-accent-ink tabular-nums',
+        'bg-accent text-[11px] font-semibold text-white tabular-nums',
         'shadow-[0_1px_4px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.25)] ring-2 ring-bg',
         className,
       )}

@@ -111,25 +111,21 @@ export const DASHBOARD_SECTIONS = {
     renderRow: seriesRow,
     renderGrid: seriesGrid,
   }),
-  'recently-read': seriesSection({
+  'recently-read': bookSection({
     title: 'Recently Read',
-    fetchPage: (libraryIds, page) => {
-      const readCondition: SearchCondition = {
-        anyOf: [
-          { readStatus: { operator: 'is', value: 'READ' } },
-          { readStatus: { operator: 'is', value: 'IN_PROGRESS' } },
-        ],
-      }
-      const conditions = libraryConditions(libraryIds)
-      return seriesApi.list({
-        search: { condition: conditions.length ? { allOf: [readCondition, ...conditions] } : readCondition },
+    fetchPage: (libraryIds, page) =>
+      booksApi.list({
+        search: {
+          condition: {
+            allOf: [{ readStatus: { operator: 'is', value: 'READ' } }, ...libraryConditions(libraryIds)],
+          },
+        },
         page,
         size: PAGE_SIZE,
-        sort: ['readDate,desc'],
-      })
-    },
-    renderRow: seriesRow,
-    renderGrid: seriesGrid,
+        sort: ['readProgress.readDate,desc'],
+      }),
+    renderRow: bookRow,
+    renderGrid: bookGrid,
   }),
 } satisfies Record<string, DashboardSectionDef>
 
