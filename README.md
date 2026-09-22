@@ -21,8 +21,9 @@ blurred-cover resume cards.
   vertical and webtoon modes, fit/original scaling, keyboard shortcuts, swipe,
   thumbnail explorer, per-series direction override, read-progress sync and
   continuous reading across books (read-list context aware)
-- Account page: password change, API keys, appearance (theme, card style,
-  grid density, spoiler blur) and reader defaults
+- Account pages in the sidebar: profile, security (password change, login
+  activity), API keys, appearance (theme, card style, grid density, spoiler
+  blur) and reader defaults
 - Live updates over SSE (lists refresh and covers reload when the server
   changes them)
 

@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Books,
   BookBookmark,
   BookmarkSimple,
+  BookOpen,
+  Books,
+  CaretDown,
+  CaretRight,
   ClockCounterClockwise,
   Copy,
+  Database,
   FileMagnifyingGlass,
   Gauge,
   GearSix,
@@ -14,21 +18,24 @@ import {
   House,
   ImageBroken,
   Images,
+  Key,
   List,
   MagnifyingGlass,
-  Megaphone,
+  Monitor,
   Moon,
+  PaintBrush,
   Palette,
   Playlist,
   PushPin,
   Rocket,
+  ShieldCheck,
   SignOut,
   Sun,
   TrayArrowDown,
+  User,
   UserCircle,
   Users,
-  CaretDown,
-  Monitor,
+  Wrench,
 } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils/cn'
@@ -77,6 +84,45 @@ function NavItem({
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {trailing}
     </NavLink>
+  )
+}
+
+function NavGroup({
+  icon,
+  label,
+  match,
+  children,
+}: {
+  icon: React.ReactNode
+  label: string
+  /** path prefixes that belong to the group; navigating into one force-opens it */
+  match: string[]
+  children: React.ReactNode
+}) {
+  const { pathname } = useLocation()
+  const containsActive = match.some((m) => pathname.startsWith(m))
+  const [open, setOpen] = useState(containsActive)
+
+  useEffect(() => {
+    if (containsActive) setOpen(true)
+  }, [containsActive])
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          'flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-[13.5px] transition-colors duration-150',
+          containsActive ? 'font-medium text-ink' : 'text-ink-2 hover:bg-raised hover:text-ink',
+        )}
+      >
+        <span className="[&_svg]:size-[18px]">{icon}</span>
+        <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+        <CaretRight className={cn('size-3.5 text-ink-3 transition-transform duration-150', open && 'rotate-90')} />
+      </button>
+      {open && <div className="mt-0.5 ml-[21px] flex flex-col gap-0.5 border-l border-line pl-1.5">{children}</div>}
+    </div>
   )
 }
 
@@ -151,6 +197,26 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           Read lists
         </NavItem>
 
+        <div className="mt-3">
+          <NavGroup icon={<UserCircle />} label="Account" match={['/account']}>
+            <NavItem to="/account/profile" icon={<User />} onClick={onNavigate}>
+              Profile
+            </NavItem>
+            <NavItem to="/account/security" icon={<ShieldCheck />} onClick={onNavigate}>
+              Security
+            </NavItem>
+            <NavItem to="/account/api-keys" icon={<Key />} onClick={onNavigate}>
+              API keys
+            </NavItem>
+            <NavItem to="/account/appearance" icon={<PaintBrush />} onClick={onNavigate}>
+              Appearance
+            </NavItem>
+            <NavItem to="/account/reader" icon={<BookOpen />} onClick={onNavigate}>
+              Reader
+            </NavItem>
+          </NavGroup>
+        </div>
+
         {isAdmin(user) && (
           <>
             <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
@@ -166,42 +232,51 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
               Administration
             </div>
-            <NavItem to="/admin/libraries" icon={<HardDrives />} onClick={onNavigate}>
-              Libraries
-            </NavItem>
-            <NavItem to="/admin/users" icon={<Users />} onClick={onNavigate}>
-              Users
-            </NavItem>
-            <NavItem to="/admin/settings" icon={<GearSix />} onClick={onNavigate}>
-              Settings
-            </NavItem>
-            <NavItem to="/admin/server" icon={<Gauge />} onClick={onNavigate}>
-              Server
-            </NavItem>
-            <NavItem to="/admin/duplicates" icon={<Copy />} onClick={onNavigate}>
-              Duplicates
-            </NavItem>
-            <NavItem to="/admin/duplicate-pages" icon={<Images />} onClick={onNavigate}>
-              Duplicate pages
-            </NavItem>
-            <NavItem to="/admin/media-analysis" icon={<FileMagnifyingGlass />} onClick={onNavigate}>
-              Media analysis
-            </NavItem>
-            <NavItem to="/admin/missing-posters" icon={<ImageBroken />} onClick={onNavigate}>
-              Missing posters
-            </NavItem>
-            <NavItem to="/admin/history" icon={<ClockCounterClockwise />} onClick={onNavigate}>
-              History
-            </NavItem>
-            <NavItem to="/admin/announcements" icon={<Megaphone />} onClick={onNavigate}>
-              Announcements
-            </NavItem>
-            <NavItem to="/admin/updates" icon={<Rocket />} onClick={onNavigate}>
-              Updates
-            </NavItem>
-            <NavItem to="/admin/ui" icon={<Palette />} onClick={onNavigate}>
-              UI settings
-            </NavItem>
+            <NavGroup
+              icon={<Database />}
+              label="Server"
+              match={['/admin/libraries', '/admin/users', '/admin/settings', '/admin/server', '/admin/updates', '/admin/ui']}
+            >
+              <NavItem to="/admin/libraries" icon={<HardDrives />} onClick={onNavigate}>
+                Libraries
+              </NavItem>
+              <NavItem to="/admin/users" icon={<Users />} onClick={onNavigate}>
+                Users
+              </NavItem>
+              <NavItem to="/admin/settings" icon={<GearSix />} onClick={onNavigate}>
+                Settings
+              </NavItem>
+              <NavItem to="/admin/server" icon={<Gauge />} onClick={onNavigate}>
+                Server
+              </NavItem>
+              <NavItem to="/admin/updates" icon={<Rocket />} onClick={onNavigate}>
+                Updates
+              </NavItem>
+              <NavItem to="/admin/ui" icon={<Palette />} onClick={onNavigate}>
+                UI settings
+              </NavItem>
+            </NavGroup>
+            <NavGroup
+              icon={<Wrench />}
+              label="Maintenance"
+              match={['/admin/duplicates', '/admin/duplicate-pages', '/admin/media-analysis', '/admin/missing-posters', '/admin/history']}
+            >
+              <NavItem to="/admin/duplicates" icon={<Copy />} onClick={onNavigate}>
+                Duplicates
+              </NavItem>
+              <NavItem to="/admin/duplicate-pages" icon={<Images />} onClick={onNavigate}>
+                Duplicate pages
+              </NavItem>
+              <NavItem to="/admin/media-analysis" icon={<FileMagnifyingGlass />} onClick={onNavigate}>
+                Media analysis
+              </NavItem>
+              <NavItem to="/admin/missing-posters" icon={<ImageBroken />} onClick={onNavigate}>
+                Missing posters
+              </NavItem>
+              <NavItem to="/admin/history" icon={<ClockCounterClockwise />} onClick={onNavigate}>
+                History
+              </NavItem>
+            </NavGroup>
           </>
         )}
       </nav>

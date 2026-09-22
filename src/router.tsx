@@ -17,7 +17,11 @@ import { CollectionDetailPage } from '@/routes/detail/collection'
 import { ReadListDetailPage } from '@/routes/detail/readlist'
 import { OneshotDetailPage } from '@/routes/detail/oneshot'
 import { SearchPage } from '@/routes/search'
-import { AccountPage } from '@/routes/account'
+import { AccountProfilePage } from '@/routes/account/profile'
+import { AccountSecurityPage } from '@/routes/account/security'
+import { AccountApiKeysPage } from '@/routes/account/api-keys'
+import { AccountAppearancePage } from '@/routes/account/appearance'
+import { AccountReaderPage } from '@/routes/account/reader'
 import { AdminLibrariesPage } from '@/routes/admin/libraries'
 import { AdminUsersPage } from '@/routes/admin/users'
 import { AdminSettingsPage } from '@/routes/admin/settings'
@@ -27,7 +31,6 @@ import { AdminDuplicatePagesPage } from '@/routes/admin/duplicate-pages'
 import { AdminMediaAnalysisPage } from '@/routes/admin/media-analysis'
 import { AdminMissingPostersPage } from '@/routes/admin/missing-posters'
 import { AdminHistoryPage } from '@/routes/admin/history'
-import { AdminAnnouncementsPage } from '@/routes/admin/announcements'
 import { AdminUpdatesPage } from '@/routes/admin/updates'
 import { AdminUiPage } from '@/routes/admin/ui'
 import { ImportBooksPage } from '@/routes/import/books'
@@ -73,7 +76,12 @@ export const router = createBrowserRouter([
           { path: '/oneshot/:seriesId', element: <OneshotDetailPage /> },
           { path: '/book/:bookId', element: <BookDetailPage /> },
           { path: '/search', element: <SearchPage /> },
-          { path: '/account', element: <AccountPage /> },
+          { path: '/account', element: <Navigate to="/account/profile" replace /> },
+          { path: '/account/profile', element: <AccountProfilePage /> },
+          { path: '/account/security', element: <AccountSecurityPage /> },
+          { path: '/account/api-keys', element: <AccountApiKeysPage /> },
+          { path: '/account/appearance', element: <AccountAppearancePage /> },
+          { path: '/account/reader', element: <AccountReaderPage /> },
           {
             element: <RequireAdmin />,
             children: [
@@ -87,7 +95,6 @@ export const router = createBrowserRouter([
               { path: '/admin/media-analysis', element: <AdminMediaAnalysisPage /> },
               { path: '/admin/missing-posters', element: <AdminMissingPostersPage /> },
               { path: '/admin/history', element: <AdminHistoryPage /> },
-              { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
               { path: '/admin/updates', element: <AdminUpdatesPage /> },
               { path: '/admin/ui', element: <AdminUiPage /> },
               { path: '/import/books', element: <ImportBooksPage /> },

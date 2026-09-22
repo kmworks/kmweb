@@ -9,6 +9,7 @@ import { formatDate } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { MarkdownContent } from '@/components/ui/Markdown'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { Skeleton } from '@/components/ui/Skeleton'
 
@@ -48,11 +49,7 @@ function ReleaseCard({ release, isCurrent }: { release: ReleaseDto; isCurrent: b
           GitHub
         </a>
       </header>
-      {release.description && (
-        <pre className="mt-3 font-sans text-sm leading-relaxed whitespace-pre-wrap text-ink-2">
-          {release.description}
-        </pre>
-      )}
+      {release.description && <MarkdownContent markdown={release.description} className="mt-3" />}
     </article>
   )
 }
