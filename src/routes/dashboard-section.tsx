@@ -23,7 +23,8 @@ export function DashboardSectionPage() {
     : undefined
   const homeTo = libraryId ? `/libraries/${libraryId}/recommended` : '/dashboard'
 
-  const { pinned } = usePinnedLibraries()
+  // pinned stays undefined until settings load; don't fire an unfiltered query in that window
+  const { pinned, isPending: settingsPending } = usePinnedLibraries()
   const libraryIds = dashboardLibraryIds(libraryId, pinned)
   const scope = dashboardScope(libraryId, pinned)
   const pinnedEmpty = !libraryId && pinned !== undefined && pinned.length === 0
@@ -35,7 +36,7 @@ export function DashboardSectionPage() {
 
   // same key+queryFn as the dashboard row, so the first pages come straight from cache
   const query = useInfiniteQuery({
-    enabled: !!section && !pinnedEmpty,
+    enabled: !!section && !settingsPending && !pinnedEmpty,
     queryKey: ['dashboard', sectionKey, scope],
     queryFn: ({ pageParam }) => {
       if (!section) throw new Error(`unknown dashboard section: ${sectionKey}`)

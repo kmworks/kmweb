@@ -90,10 +90,12 @@ export function DashboardPage() {
   const libraries = librariesQuery.data
   const library = libraryId ? libraries?.find((l) => l.id === libraryId) : undefined
 
-  const { pinned } = usePinnedLibraries()
+  // pinned stays undefined until settings load; don't fire unfiltered section queries in that window
+  const { pinned, isPending: settingsPending } = usePinnedLibraries()
   const libraryIds = dashboardLibraryIds(libraryId, pinned)
   const scope = dashboardScope(libraryId, pinned)
   const pinnedEmpty = !libraryId && pinned !== undefined && pinned.length === 0
+  const rowsEnabled = !settingsPending && !pinnedEmpty
 
   const { sections } = useDashboardSections(libraryId)
   const [sectionsDialogOpen, setSectionsDialogOpen] = useState(false)
@@ -104,13 +106,13 @@ export function DashboardPage() {
   }, [libraryId, library])
 
   const sectionQueries: Record<DashboardSectionKey, PagedRowQuery<BookDto | SeriesDto>> = {
-    'keep-reading': useSectionRow('keep-reading', libraryIds, scope, !pinnedEmpty),
-    'on-deck': useSectionRow('on-deck', libraryIds, scope, !pinnedEmpty),
-    'recently-released-books': useSectionRow('recently-released-books', libraryIds, scope, !pinnedEmpty),
-    'recently-added-books': useSectionRow('recently-added-books', libraryIds, scope, !pinnedEmpty),
-    'recently-added-series': useSectionRow('recently-added-series', libraryIds, scope, !pinnedEmpty),
-    'recently-updated-series': useSectionRow('recently-updated-series', libraryIds, scope, !pinnedEmpty),
-    'recently-read': useSectionRow('recently-read', libraryIds, scope, !pinnedEmpty),
+    'keep-reading': useSectionRow('keep-reading', libraryIds, scope, rowsEnabled),
+    'on-deck': useSectionRow('on-deck', libraryIds, scope, rowsEnabled),
+    'recently-released-books': useSectionRow('recently-released-books', libraryIds, scope, rowsEnabled),
+    'recently-added-books': useSectionRow('recently-added-books', libraryIds, scope, rowsEnabled),
+    'recently-added-series': useSectionRow('recently-added-series', libraryIds, scope, rowsEnabled),
+    'recently-updated-series': useSectionRow('recently-updated-series', libraryIds, scope, rowsEnabled),
+    'recently-read': useSectionRow('recently-read', libraryIds, scope, rowsEnabled),
   }
 
   const visibleSections = sections.filter((s) => !s.hidden)

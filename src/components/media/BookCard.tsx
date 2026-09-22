@@ -5,10 +5,11 @@ import { useBust } from '@/lib/store/thumbnails'
 import { useUiStore } from '@/lib/store/ui'
 import { CoverImage } from './CoverImage'
 import { CardFrame, CardText, CardOverlayText } from './CardFrame'
-import { ProgressCapsule } from './badges'
+import { ProgressCapsule, UnreadDot } from './badges'
 import { SelectBadge } from '@/components/selection/SelectBadge'
 import type { CardSelection } from '@/components/selection/useSelection'
 import { plural, relativeTime } from '@/lib/utils/format'
+import { mediaStatusLabel } from '@/lib/utils/mediaStatus'
 import { cn } from '@/lib/utils/cn'
 
 interface BookCardProps {
@@ -50,6 +51,14 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
   const overline = showSeries ? book.seriesTitle : undefined
   const titleLines = showSeries ? 1 : 2
 
+  // like komga's card body line: a broken media status replaces the normal meta
+  const statusLabel = mediaStatusLabel(book.media.status)
+  const secondaryText = statusLabel ? (
+    <span className={statusLabel.className}>{statusLabel.text}</span>
+  ) : (
+    secondary
+  )
+
   const frame = (
     <CardFrame to={`/book/${book.id}`} label={title} className={selection ? undefined : className}>
       <div className="relative">
@@ -61,10 +70,11 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
           className={cn(selection?.selected && 'ring-2 ring-accent')}
         />
         {selection && <SelectBadge {...selection} label={title} />}
+        {unread && <UnreadDot />}
         <ProgressCapsule value={progress} />
-        <CardOverlayText title={title} overline={overline} secondary={secondary} titleLines={titleLines} />
+        <CardOverlayText title={title} overline={overline} secondary={secondaryText} titleLines={titleLines} />
       </div>
-      <CardText title={title} overline={overline} secondary={secondary} titleLines={titleLines} />
+      <CardText title={title} overline={overline} secondary={secondaryText} titleLines={titleLines} />
     </CardFrame>
   )
 
