@@ -20,7 +20,7 @@ export function SelectBadge({ active, selected, onToggle, label }: SelectBadgePr
         onToggle()
       }}
       className={cn(
-        'absolute top-1.5 left-1.5 z-10 flex size-6 cursor-pointer items-center justify-center rounded-full border transition-opacity',
+        'absolute top-1.5 left-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full border transition-opacity',
         selected
           ? 'border-accent bg-accent text-accent-ink opacity-100'
           : 'border-white/70 bg-black/40 backdrop-blur-sm hover:border-white',
