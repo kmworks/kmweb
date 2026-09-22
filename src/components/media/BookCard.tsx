@@ -1,4 +1,5 @@
 import type { BookDto } from '@/lib/api/types'
+import { CheckCircle } from '@phosphor-icons/react'
 import { urls } from '@/lib/utils/urls'
 import { useBust } from '@/lib/store/thumbnails'
 import { useUiStore } from '@/lib/store/ui'
@@ -7,7 +8,7 @@ import { CardFrame, CardText, CardOverlayText } from './CardFrame'
 import { ProgressCapsule } from './badges'
 import { SelectBadge } from '@/components/selection/SelectBadge'
 import type { CardSelection } from '@/components/selection/useSelection'
-import { plural } from '@/lib/utils/format'
+import { plural, relativeTime } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 
 interface BookCardProps {
@@ -26,13 +27,28 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
   const title = book.metadata.title || book.name
   const unread = !book.readProgress
 
-  const secondary = showSeries
-    ? book.seriesTitle
-    : `#${book.metadata.number} · ${plural(book.media.pagesCount, 'page')}`
-
   const progress = book.readProgress && !book.readProgress.completed && book.media.pagesCount > 0
     ? book.readProgress.page / book.media.pagesCount
     : 0
+
+  // KMReader-style meta line: in-progress "45% · 120 pages", completed "✓ 3d ago"
+  const readAgo = book.readProgress?.completed ? relativeTime(book.readProgress.readDate) : ''
+  const metaParts: string[] = []
+  if (!showSeries) metaParts.push(`#${book.metadata.number}`)
+  if (progress > 0) metaParts.push(`${Math.round(progress * 100)}%`)
+  metaParts.push(plural(book.media.pagesCount, 'page'))
+  const secondary = readAgo ? (
+    <span className="inline-flex items-center gap-1">
+      {!showSeries && `#${book.metadata.number} · `}
+      <CheckCircle className="size-3" weight="fill" />
+      {readAgo}
+    </span>
+  ) : (
+    metaParts.join(' · ')
+  )
+
+  const overline = showSeries ? book.seriesTitle : undefined
+  const titleLines = showSeries ? 1 : 2
 
   const frame = (
     <CardFrame to={`/book/${book.id}`} label={title} className={selection ? undefined : className}>
@@ -46,9 +62,9 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
         />
         {selection && <SelectBadge {...selection} label={title} />}
         <ProgressCapsule value={progress} />
-        <CardOverlayText title={title} secondary={secondary} />
+        <CardOverlayText title={title} overline={overline} secondary={secondary} titleLines={titleLines} />
       </div>
-      <CardText title={title} secondary={secondary} />
+      <CardText title={title} overline={overline} secondary={secondary} titleLines={titleLines} />
     </CardFrame>
   )
 
