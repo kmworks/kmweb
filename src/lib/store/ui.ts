@@ -10,10 +10,12 @@ interface UiState {
   cardStyle: CardStyle
   gridDensity: GridDensity
   blurUnreadCovers: boolean
+  sidebarLibrariesCollapsed: boolean
   setTheme: (t: Theme) => void
   setCardStyle: (s: CardStyle) => void
   setGridDensity: (d: GridDensity) => void
   setBlurUnreadCovers: (v: boolean) => void
+  setSidebarLibrariesCollapsed: (v: boolean) => void
 }
 
 export const useUiStore = create<UiState>()(
@@ -23,10 +25,12 @@ export const useUiStore = create<UiState>()(
       cardStyle: 'standard',
       gridDensity: 'standard',
       blurUnreadCovers: false,
+      sidebarLibrariesCollapsed: false,
       setTheme: (theme) => set({ theme }),
       setCardStyle: (cardStyle) => set({ cardStyle }),
       setGridDensity: (gridDensity) => set({ gridDensity }),
       setBlurUnreadCovers: (blurUnreadCovers) => set({ blurUnreadCovers }),
+      setSidebarLibrariesCollapsed: (sidebarLibrariesCollapsed) => set({ sidebarLibrariesCollapsed }),
     }),
     { name: 'kmweb.ui' },
   ),

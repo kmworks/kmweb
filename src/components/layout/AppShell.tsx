@@ -135,6 +135,8 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const user = useAuthStore((s) => s.user)
   const { pinned } = usePinnedLibraries()
   const [pinDialogOpen, setPinDialogOpen] = useState(false)
+  const librariesCollapsed = useUiStore((s) => s.sidebarLibrariesCollapsed)
+  const setLibrariesCollapsed = useUiStore((s) => s.setSidebarLibrariesCollapsed)
 
   const pinnedIndex = new Map((pinned ?? []).map((id, i) => [id, i]))
   const pinRank = (id: string) => pinnedIndex.get(id) ?? Number.MAX_SAFE_INTEGER
@@ -157,7 +159,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         </NavItem>
 
         <div className="mt-5 mb-1.5 flex items-center justify-between px-3">
-          <span className="text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">Libraries</span>
+          <button
+            type="button"
+            onClick={() => setLibrariesCollapsed(!librariesCollapsed)}
+            className="flex cursor-pointer items-center gap-1 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase transition-colors hover:text-ink-2"
+          >
+            Libraries
+            <CaretRight
+              className={cn('size-3 transition-transform duration-150', !librariesCollapsed && 'rotate-90')}
+            />
+          </button>
           {libraries && libraries.length > 0 && (
             <IconButton
               label="Manage pinned libraries"
@@ -168,28 +179,32 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </IconButton>
           )}
         </div>
-        {isLoading && (
-          <div className="flex flex-col gap-2 px-3">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-6 w-1/2" />
-          </div>
+        {!librariesCollapsed && (
+          <>
+            {isLoading && (
+              <div className="flex flex-col gap-2 px-3">
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+              </div>
+            )}
+            {sortedLibraries?.map((lib) => (
+              <NavItem
+                key={lib.id}
+                to={`/libraries/${lib.id}/${preferredTab[lib.id] ?? 'series'}`}
+                icon={<BookBookmark />}
+                onClick={onNavigate}
+                trailing={
+                  pinnedIndex.has(lib.id) ? (
+                    <PushPin weight="fill" className="size-3 shrink-0 text-ink-3" aria-label="Pinned" />
+                  ) : undefined
+                }
+              >
+                {lib.name}
+              </NavItem>
+            ))}
+            {libraries?.length === 0 && <p className="px-3 text-[13px] text-ink-3">No libraries yet</p>}
+          </>
         )}
-        {sortedLibraries?.map((lib) => (
-          <NavItem
-            key={lib.id}
-            to={`/libraries/${lib.id}/${preferredTab[lib.id] ?? 'series'}`}
-            icon={<BookBookmark />}
-            onClick={onNavigate}
-            trailing={
-              pinnedIndex.has(lib.id) ? (
-                <PushPin weight="fill" className="size-3 shrink-0 text-ink-3" aria-label="Pinned" />
-              ) : undefined
-            }
-          >
-            {lib.name}
-          </NavItem>
-        ))}
-        {libraries?.length === 0 && <p className="px-3 text-[13px] text-ink-3">No libraries yet</p>}
 
         <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
           Curated
@@ -200,23 +215,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavItem to="/readlists" icon={<BookmarkSimple />} onClick={onNavigate}>
           Read lists
         </NavItem>
-
-        <div className="mt-3">
-          <NavGroup icon={<UserCircle />} label="Account" match={['/account']}>
-            <NavItem to="/account/profile" icon={<User />} onClick={onNavigate}>
-              Profile
-            </NavItem>
-            <NavItem to="/account/security" icon={<ShieldCheck />} onClick={onNavigate}>
-              Security
-            </NavItem>
-            <NavItem to="/account/api-keys" icon={<Key />} onClick={onNavigate}>
-              API keys
-            </NavItem>
-            <NavItem to="/account/reader" icon={<BookOpen />} onClick={onNavigate}>
-              Reader
-            </NavItem>
-          </NavGroup>
-        </div>
 
         {isAdmin(user) && (
           <>
@@ -280,6 +278,23 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </NavGroup>
           </>
         )}
+
+        <div className="mt-3">
+          <NavGroup icon={<UserCircle />} label="Account" match={['/account']}>
+            <NavItem to="/account/profile" icon={<User />} onClick={onNavigate}>
+              Profile
+            </NavItem>
+            <NavItem to="/account/security" icon={<ShieldCheck />} onClick={onNavigate}>
+              Security
+            </NavItem>
+            <NavItem to="/account/api-keys" icon={<Key />} onClick={onNavigate}>
+              API keys
+            </NavItem>
+            <NavItem to="/account/reader" icon={<BookOpen />} onClick={onNavigate}>
+              Reader
+            </NavItem>
+          </NavGroup>
+        </div>
       </nav>
 
       <PinLibrariesDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
@@ -321,10 +336,6 @@ function SidebarFooter() {
         }
       >
         <MenuLabel>{user?.email}</MenuLabel>
-        <MenuItem onSelect={() => navigate('/account')}>
-          <UserCircle className="size-4" /> Account
-        </MenuItem>
-        <MenuSeparator />
         <MenuItem onSelect={logout}>
           <SignOut className="size-4" /> Sign out
         </MenuItem>
