@@ -232,7 +232,13 @@ function Reader({ bookId }: { bookId: string }) {
     else if (document.fullscreenElement) document.exitFullscreen().catch(() => {})
   }, [])
 
-  const exitReader = useCallback(() => navigate(`/book/${bookId}`), [navigate, bookId])
+  // closing returns to whatever page opened the reader; the book page is only the fallback for direct loads
+  const exitReader = useCallback(() => {
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1)
+    else navigate(`/book/${bookId}`)
+  }, [navigate, bookId])
+
+  const goToBook = useCallback(() => navigate(`/book/${bookId}`), [navigate, bookId])
 
   const contextQuery = useCallback(() => {
     const q = new URLSearchParams()
@@ -248,7 +254,8 @@ function Reader({ bookId }: { bookId: string }) {
   const goBook = useCallback(
     (dir: 'previous' | 'next') => {
       const sibling = dir === 'next' ? siblingNext : siblingPrevious
-      if (sibling) navigate(`/book/${sibling.id}/read${contextQuery()}`)
+      // replace keeps the whole reading session as one history entry, so closing still returns to the page that opened the reader
+      if (sibling) navigate(`/book/${sibling.id}/read${contextQuery()}`, { replace: true })
       else exitReader()
     },
     [siblingNext, siblingPrevious, navigate, contextQuery, exitReader],
@@ -548,7 +555,7 @@ function Reader({ bookId }: { bookId: string }) {
         onDownload={downloadFile}
         onDownloadPage={downloadPage}
         onSetPoster={setPoster}
-        onGoToBook={exitReader}
+        onGoToBook={goToBook}
       />
 
       <SettingsPanel
