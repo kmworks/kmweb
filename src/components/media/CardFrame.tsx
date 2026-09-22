@@ -36,7 +36,7 @@ interface CardTextProps {
 /** Title block under a cover; honors the global card-style preference. */
 export function CardText({ title, secondary }: CardTextProps) {
   const cardStyle = useUiStore((s) => s.cardStyle)
-  if (cardStyle === 'cover') return null
+  if (cardStyle !== 'standard') return null
   return (
     <div className="mt-2 min-w-0 px-0.5">
       <p className="truncate text-[13px] leading-snug font-medium text-ink">{title}</p>

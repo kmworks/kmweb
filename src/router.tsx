@@ -20,7 +20,6 @@ import { SearchPage } from '@/routes/search'
 import { AccountProfilePage } from '@/routes/account/profile'
 import { AccountSecurityPage } from '@/routes/account/security'
 import { AccountApiKeysPage } from '@/routes/account/api-keys'
-import { AccountAppearancePage } from '@/routes/account/appearance'
 import { AccountReaderPage } from '@/routes/account/reader'
 import { AdminLibrariesPage } from '@/routes/admin/libraries'
 import { AdminUsersPage } from '@/routes/admin/users'
@@ -80,7 +79,6 @@ export const router = createBrowserRouter([
           { path: '/account/profile', element: <AccountProfilePage /> },
           { path: '/account/security', element: <AccountSecurityPage /> },
           { path: '/account/api-keys', element: <AccountApiKeysPage /> },
-          { path: '/account/appearance', element: <AccountAppearancePage /> },
           { path: '/account/reader', element: <AccountReaderPage /> },
           {
             element: <RequireAdmin />,
