@@ -32,12 +32,15 @@ export function CoverImage({ src, alt, className, blurred, eager }: CoverImagePr
           onLoad={() => setLoaded(true)}
           onError={() => setError(true)}
           className={cn(
-            'absolute inset-0 size-full object-cover transition-[opacity,transform,filter] duration-300 group-hover:scale-[1.05] group-hover:brightness-[1.08]',
+            // scale is a separate CSS property in Tailwind v4; leaving it out of the transition list makes the hover zoom snap
+            'absolute inset-0 size-full object-cover transition-[opacity,transform,scale,filter] duration-300 ease-out-expo group-hover:scale-[1.05] group-hover:brightness-[1.08]',
             loaded ? 'opacity-100' : 'opacity-0',
             blurred && 'blur-[5px] scale-[1.04]',
           )}
         />
       )}
+      {/* hairline over the cover so dark covers stay distinguishable from the page background */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] inset-ring-1 inset-ring-line" />
     </div>
   )
 }

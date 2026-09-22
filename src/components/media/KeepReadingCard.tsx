@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Play } from '@phosphor-icons/react'
 import type { BookDto } from '@/lib/api/types'
@@ -15,26 +16,34 @@ export function KeepReadingCard({ book, className }: { book: BookDto; className?
   const cover = urls.bookThumbnail(book.id, bust || undefined)
   const to = readRoute(book) ?? `/book/${book.id}`
   const pct = book.media.pagesCount > 0 && book.readProgress ? book.readProgress.page / book.media.pagesCount : 0
+  const [bgLoaded, setBgLoaded] = useState(false)
 
   return (
     <Link
       to={to}
       aria-label={`Continue reading ${book.metadata.title || book.name}`}
       className={cn(
-        'group relative block w-[300px] shrink-0 cursor-pointer overflow-hidden rounded-xl bg-neutral-900',
-        'transition-[transform,box-shadow,filter] duration-300 ease-out-expo group-hover:shadow-card group-hover:brightness-[1.07] active:scale-[0.98]',
+        'group relative block w-[300px] shrink-0 cursor-pointer overflow-hidden rounded-xl bg-raised',
+        'transition-[transform,scale,box-shadow,filter] duration-300 ease-out-expo group-hover:shadow-card group-hover:brightness-[1.07] active:scale-[0.98]',
         className,
       )}
     >
-      {/* blurred cover backdrop */}
+      {/* blurred cover backdrop: stretch (not crop) so the tint carries the cover's overall
+          tone; the overscan keeps the blur from sampling past the image and darkening edges */}
       <img
         src={cover}
         alt=""
         aria-hidden
         loading="lazy"
-        className="absolute inset-0 size-full scale-125 object-cover opacity-40 blur-2xl saturate-[1.2]"
+        onLoad={() => setBgLoaded(true)}
+        className={cn(
+          'absolute inset-0 size-full scale-[1.3] object-fill blur-2xl saturate-[0.7] transition-opacity duration-500',
+          bgLoaded ? 'opacity-100' : 'opacity-0',
+        )}
       />
-      <div className="absolute inset-0 bg-black/45" />
+      {/* even dimming layer so the white title stays readable on light covers */}
+      <div className="absolute inset-0 bg-black/40" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] inset-ring-1 inset-ring-line" />
 
       <div className="relative flex h-30 items-stretch gap-3.5 p-3.5">
         <img
