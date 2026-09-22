@@ -50,6 +50,8 @@ import { queryClient } from '@/lib/queryClient'
 import { LogoMark } from '@/components/LogoMark'
 import { IconButton } from '@/components/ui/IconButton'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/Menu'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { Switch } from '@/components/ui/Switch'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
 
@@ -157,7 +159,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           {libraries && libraries.length > 0 && (
             <IconButton
               label="Manage pinned libraries"
-              className="-my-1 size-6 rounded-md [&_svg]:size-3.5"
+              className="-my-1 -mr-[5px] size-6 rounded-md [&_svg]:size-3.5"
               onClick={() => setPinDialogOpen(true)}
             >
               <PushPin />
@@ -207,9 +209,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             </NavItem>
             <NavItem to="/account/api-keys" icon={<Key />} onClick={onNavigate}>
               API keys
-            </NavItem>
-            <NavItem to="/account/appearance" icon={<PaintBrush />} onClick={onNavigate}>
-              Appearance
             </NavItem>
             <NavItem to="/account/reader" icon={<BookOpen />} onClick={onNavigate}>
               Reader
@@ -390,6 +389,64 @@ function ThemeButton() {
   )
 }
 
+function AppearanceMenu() {
+  const cardStyle = useUiStore((s) => s.cardStyle)
+  const gridDensity = useUiStore((s) => s.gridDensity)
+  const blurUnreadCovers = useUiStore((s) => s.blurUnreadCovers)
+  const setCardStyle = useUiStore((s) => s.setCardStyle)
+  const setGridDensity = useUiStore((s) => s.setGridDensity)
+  const setBlurUnreadCovers = useUiStore((s) => s.setBlurUnreadCovers)
+
+  return (
+    <Menu
+      trigger={
+        <IconButton label="Appearance">
+          <PaintBrush className="size-5" />
+        </IconButton>
+      }
+    >
+      <div className="w-64 space-y-3 p-2.5">
+        <div>
+          <MenuLabel>Card style</MenuLabel>
+          <SegmentedControl
+            size="sm"
+            className="w-full [&>button]:flex-1"
+            options={[
+              { value: 'standard', label: 'Standard' },
+              { value: 'overlay', label: 'Overlay' },
+              { value: 'cover', label: 'Cover only' },
+            ]}
+            value={cardStyle}
+            onChange={setCardStyle}
+          />
+        </div>
+        <div>
+          <MenuLabel>Grid density</MenuLabel>
+          <SegmentedControl
+            size="sm"
+            className="w-full [&>button]:flex-1"
+            options={[
+              { value: 'compact', label: 'Compact' },
+              { value: 'standard', label: 'Standard' },
+              { value: 'cozy', label: 'Cozy' },
+            ]}
+            value={gridDensity}
+            onChange={setGridDensity}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-3 px-2.5 pt-1 pb-1">
+          <span className="text-[13px] text-ink-2">Blur unread covers</span>
+          <Switch
+            checked={blurUnreadCovers}
+            onCheckedChange={setBlurUnreadCovers}
+            label="Blur covers of unread series and books"
+          />
+        </div>
+      </div>
+    </Menu>
+  )
+}
+
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const navigate = useNavigate()
@@ -438,6 +495,7 @@ export function AppShell() {
             <MagnifyingGlass className="size-5" />
           </IconButton>
           <ThemeButton />
+          <AppearanceMenu />
         </header>
 
         <main className="min-w-0 flex-1 px-4 py-6 md:px-8 md:py-8">
