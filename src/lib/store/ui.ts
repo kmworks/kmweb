@@ -50,3 +50,8 @@ export function applyTheme(theme: Theme) {
 export function densityScale(d: GridDensity): number {
   return d === 'compact' ? 0.8 : d === 'cozy' ? 1.3 : 1
 }
+
+export function useDensityCardWidth(base = 140): number {
+  const density = useUiStore((s) => s.gridDensity)
+  return Math.round(base * densityScale(density))
+}

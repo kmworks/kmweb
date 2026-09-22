@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { CoverImage } from '@/components/media/CoverImage'
 import { ReadListCard } from '@/components/media/SeriesCard'
 import { HorizontalRow } from '@/components/media/HorizontalRow'
+import { useDensityCardWidth } from '@/lib/store/ui'
 import { DetailHero } from '@/components/detail/DetailHero'
 import { DetailSkeleton } from '@/components/detail/DetailSkeleton'
 import { DetailError } from '@/components/detail/DetailError'
@@ -38,6 +39,7 @@ export function OneshotDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
+  const rowCardWidth = useDensityCardWidth()
 
   const seriesQuery = useQuery({ queryKey: ['series', seriesId], queryFn: () => seriesApi.get(seriesId) })
   const series = seriesQuery.data
@@ -234,7 +236,9 @@ export function OneshotDetailPage() {
       {readlists.length > 0 && (
         <HorizontalRow title="In read lists" className="mt-10">
           {readlists.map((l) => (
-            <ReadListCard key={l.id} id={l.id} name={l.name} count={l.bookIds.length} className="w-[140px] shrink-0" />
+            <div key={l.id} className="shrink-0" style={{ width: rowCardWidth }}>
+              <ReadListCard id={l.id} name={l.name} count={l.bookIds.length} />
+            </div>
           ))}
         </HorizontalRow>
       )}

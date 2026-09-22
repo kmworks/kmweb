@@ -30,6 +30,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { GridSkeleton } from '@/components/ui/Skeleton'
 import { CoverImage } from '@/components/media/CoverImage'
 import { MediaGrid } from '@/components/media/MediaGrid'
+import { useDensityCardWidth } from '@/lib/store/ui'
 import { BookCard } from '@/components/media/BookCard'
 import { CollectionCard } from '@/components/media/SeriesCard'
 import { HorizontalRow } from '@/components/media/HorizontalRow'
@@ -54,6 +55,7 @@ export function SeriesDetailPage() {
   const queryClient = useQueryClient()
   const user = useAuthStore((s) => s.user)
   const bust = useBust(seriesId)
+  const rowCardWidth = useDensityCardWidth()
   const [readStatus, setReadStatus] = useState<ReadStatusFilter>('ALL')
   const [newCollectionOpen, setNewCollectionOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
@@ -327,7 +329,9 @@ export function SeriesDetailPage() {
       {collections.length > 0 && (
         <HorizontalRow title="In collections" className="mt-10">
           {collections.map((c) => (
-            <CollectionCard key={c.id} id={c.id} name={c.name} count={c.seriesIds.length} className="w-[140px] shrink-0" />
+            <div key={c.id} className="shrink-0" style={{ width: rowCardWidth }}>
+              <CollectionCard id={c.id} name={c.name} count={c.seriesIds.length} />
+            </div>
           ))}
         </HorizontalRow>
       )}
