@@ -16,6 +16,9 @@ import { BookCard } from '@/components/media/BookCard'
 import { HorizontalRow } from '@/components/media/HorizontalRow'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { CollectionCard, ReadListCard, SeriesCard } from '@/components/media/SeriesCard'
+import { cardSelection, useSelection } from '@/components/selection/useSelection'
+import { SeriesSelectionBar } from '@/components/browse/SeriesSelectionBar'
+import { BooksSelectionBar } from '@/components/browse/BooksSelectionBar'
 
 const TABS = [
   { value: 'all', label: 'All' },
@@ -71,6 +74,16 @@ export function SearchPage() {
     document.title = q ? `Search: ${q} · KMReader` : 'Search · KMReader'
   }, [q])
 
+  const seriesSel = useSelection()
+  const booksSel = useSelection()
+  const clearSeriesSel = seriesSel.clear
+  const clearBooksSel = booksSel.clear
+  // results are replaced wholesale when the query or tab changes; stale selections would point at hidden items
+  useEffect(() => {
+    clearSeriesSel()
+    clearBooksSel()
+  }, [q, tab, clearSeriesSel, clearBooksSel])
+
   const onTabChange = (value: SearchTab) => {
     setSearchParams(
       (prev) => {
@@ -124,14 +137,16 @@ export function SearchPage() {
           q={q}
           queryKey={['series', 'search', q]}
           fetchPage={(page) => seriesApi.list({ search: { fullTextSearch: q }, page, size: 24 })}
-          renderCard={(s) => <SeriesCard series={s} />}
+          renderCard={(s) => <SeriesCard series={s} selection={cardSelection(seriesSel, s.id)} />}
+          selectionBar={(items) => <SeriesSelectionBar selection={seriesSel} loadedIds={items.map((s) => s.id)} />}
         />
       ) : tab === 'books' ? (
         <CategoryGrid
           q={q}
           queryKey={['books', 'search', q]}
           fetchPage={(page) => booksApi.list({ search: { fullTextSearch: q }, page, size: 24 })}
-          renderCard={(b) => <BookCard book={b} showSeries />}
+          renderCard={(b) => <BookCard book={b} showSeries selection={cardSelection(booksSel, b.id)} />}
+          selectionBar={(items) => <BooksSelectionBar selection={booksSel} loadedIds={items.map((b) => b.id)} />}
         />
       ) : tab === 'collections' ? (
         <CategoryGrid
@@ -249,11 +264,14 @@ function CategoryGrid<T extends { id: string }>({
   queryKey,
   fetchPage,
   renderCard,
+  selectionBar,
 }: {
   q: string
   queryKey: readonly unknown[]
   fetchPage: (page: number) => Promise<Page<T>>
   renderCard: (item: T) => ReactNode
+  /** rendered below the grid with the currently loaded items (batch actions) */
+  selectionBar?: (items: T[]) => ReactNode
 }) {
   const { data, isLoading, isError, error, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
@@ -290,6 +308,7 @@ function CategoryGrid<T extends { id: string }>({
           <Fragment key={item.id}>{renderCard(item)}</Fragment>
         ))}
       </MediaGrid>
+      {selectionBar?.(items)}
       {isFetchingNextPage && (
         <div className="mt-8 flex justify-center text-ink-3">
           <CircleNotch className="size-5 animate-spin" />

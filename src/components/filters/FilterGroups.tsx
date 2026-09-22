@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/Skeleton'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { cn } from '@/lib/utils/cn'
 import { useDebouncedValue } from './useDebouncedValue'
-import type { AuthorFilter, FilterGroupDef, FilterState, GroupKey, GroupMode, ReferentialKind } from './types'
+import { LETTERS, type AuthorFilter, type FilterGroupDef, type FilterState, type GroupKey, type GroupMode, type ReferentialKind } from './types'
 
 const MODE_OPTIONS: { value: GroupMode; label: string }[] = [
   { value: 'any', label: 'Any' },
@@ -39,7 +39,7 @@ function GroupSearchInput({ value, onChange, placeholder }: { value: string; onC
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="mb-2 h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-xs text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+      className="mb-2 h-8 w-full rounded-lg border border-line bg-surface px-2.5 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
     />
   )
 }
@@ -76,6 +76,8 @@ function fetchReferential(kind: ReferentialKind, libraryId?: string): Promise<st
       return referentialApi.seriesTags({ libraryId: lib })
     case 'bookTags':
       return referentialApi.bookTags({ libraryId: lib })
+    case 'sharingLabels':
+      return referentialApi.sharingLabels({ libraryId: lib })
     case 'ageRatings':
       return referentialApi.ageRatings({ libraryId: lib })
     case 'languages':
@@ -151,6 +153,28 @@ function ReferentialOptions({
 
 const AUTHOR_RESULTS_LIMIT = 60
 
+function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (letter: string) => void }) {
+  const active = selected[0]
+  return (
+    <div className="flex flex-wrap gap-1">
+      {[...LETTERS, '#'].map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => onSelect(l)}
+          aria-pressed={active === l}
+          className={cn(
+            'size-7 cursor-pointer rounded-md font-mono text-xs transition-colors',
+            active === l ? 'bg-accent-soft text-accent-strong' : 'text-ink-3 hover:bg-raised hover:text-ink',
+          )}
+        >
+          {l}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 function AuthorsOptions({
   libraryId,
   selected,
@@ -217,7 +241,14 @@ interface FilterGroupSectionProps {
   onToggleValue: (key: GroupKey, value: string) => void
   onToggleAuthor: (author: AuthorFilter) => void
   onSetMode: (key: GroupKey, mode: GroupMode) => void
+  onSetNegated: (key: GroupKey, negated: boolean) => void
+  onSetExclusive: (key: GroupKey, value: string) => void
 }
+
+const NEGATE_OPTIONS: { value: 'is' | 'isNot'; label: string }[] = [
+  { value: 'is', label: 'is' },
+  { value: 'isNot', label: 'is not' },
+]
 
 export function FilterGroupSection({
   def,
@@ -227,18 +258,31 @@ export function FilterGroupSection({
   onToggleValue,
   onToggleAuthor,
   onSetMode,
+  onSetNegated,
+  onSetExclusive,
 }: FilterGroupSectionProps) {
   const values = def.kind === 'authors' ? [] : (state[def.key] as string[])
   const selectedCount = def.kind === 'authors' ? state.authors.length : values.length
   const mode: GroupMode = state.matchAll.includes(def.key) ? 'all' : 'any'
+  const negated = state.exclude.includes(def.key)
 
   return (
     <section className="border-b border-line py-4 last:border-b-0">
-      <div className="mb-2.5 flex items-center justify-between gap-2">
+      <div className="mb-2.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
         <h3 className="text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">{def.label}</h3>
-        {selectedCount >= 2 && (
-          <SegmentedControl size="sm" options={MODE_OPTIONS} value={mode} onChange={(m) => onSetMode(def.key, m)} />
-        )}
+        <div className="flex items-center gap-1.5">
+          {def.negatable && selectedCount >= 1 && (
+            <SegmentedControl
+              size="sm"
+              options={NEGATE_OPTIONS}
+              value={negated ? 'isNot' : 'is'}
+              onChange={(m) => onSetNegated(def.key, m === 'isNot')}
+            />
+          )}
+          {selectedCount >= 2 && (
+            <SegmentedControl size="sm" options={MODE_OPTIONS} value={mode} onChange={(m) => onSetMode(def.key, m)} />
+          )}
+        </div>
       </div>
       {def.kind === 'enum' && def.options && (
         <div className="flex flex-wrap gap-1.5">
@@ -258,6 +302,7 @@ export function FilterGroupSection({
           onToggle={(v) => onToggleValue(def.key, v)}
         />
       )}
+      {def.kind === 'letters' && <LetterOptions selected={values} onSelect={(l) => onSetExclusive(def.key, l)} />}
       {def.kind === 'authors' && (
         <AuthorsOptions libraryId={libraryId} selected={state.authors} enabled={enabled} onToggle={onToggleAuthor} />
       )}

@@ -1,5 +1,5 @@
 import type { BookSearch, ConditionLeaf, SearchCondition, SearchOperator, SeriesSearch } from '@/lib/api/types'
-import type { AuthorFilter, FilterState, GroupKey, GroupMode } from './types'
+import { LETTERS, type AuthorFilter, type FilterState, type GroupKey, type GroupMode } from './types'
 
 function leaf(key: string, operator: SearchOperator, value?: unknown): ConditionLeaf {
   return value === undefined ? { [key]: { operator } } : { [key]: { operator, value } }
@@ -25,6 +25,18 @@ function authorConditions(authors: AuthorFilter[]): SearchCondition[] {
   return authors.map((a) => leaf('author', 'is', a.role ? { name: a.name, role: a.role } : { name: a.name }))
 }
 
+/** boolean DSL leaves carry no value, just isTrue/isFalse */
+function boolLeaf(key: string, v: string): ConditionLeaf {
+  return leaf(key, v === 'true' ? 'isTrue' : 'isFalse')
+}
+
+function letterCondition(letter: string[]): SearchCondition | undefined {
+  const l = letter[0]
+  if (!l) return undefined
+  if (l === '#') return { allOf: LETTERS.map((c) => leaf('titleSort', 'doesNotBeginWith', c)) }
+  return leaf('titleSort', 'beginsWith', l)
+}
+
 // the referential endpoint serves strings, but the ageRating leaf expects a number
 function ageRatingValue(v: string): string | number {
   return /^\d+$/.test(v) ? Number(v) : v
@@ -39,13 +51,19 @@ function finalize(state: FilterState, conditions: SearchCondition[]): { conditio
 
 export function buildSeriesSearch(state: FilterState, libraryId?: string): SeriesSearch {
   const mode = (g: GroupKey): GroupMode => (state.matchAll.includes(g) ? 'all' : 'any')
+  const readOp: SearchOperator = state.exclude.includes('readStatus') ? 'isNot' : 'is'
   const conditions: SearchCondition[] = []
   if (libraryId) conditions.push(leaf('libraryId', 'is', libraryId))
-  push(conditions, combine(state.readStatus.map((v) => leaf('readStatus', 'is', v)), mode('readStatus')))
+  push(conditions, combine(state.readStatus.map((v) => leaf('readStatus', readOp, v)), mode('readStatus')))
   push(conditions, combine(state.seriesStatus.map((v) => leaf('seriesStatus', 'is', v)), mode('seriesStatus')))
+  push(conditions, letterCondition(state.letter))
+  push(conditions, combine(state.complete.map((v) => boolLeaf('complete', v)), mode('complete')))
+  push(conditions, combine(state.oneshot.map((v) => boolLeaf('oneShot', v)), mode('oneshot')))
+  push(conditions, combine(state.deleted.map((v) => boolLeaf('deleted', v)), mode('deleted')))
   push(conditions, combine(state.publishers.map((v) => leaf('publisher', 'is', v)), mode('publishers')))
   push(conditions, combine(state.genres.map((v) => leaf('genre', 'is', v)), mode('genres')))
   push(conditions, combine(state.tags.map((v) => leaf('tag', 'is', v)), mode('tags')))
+  push(conditions, combine(state.sharingLabels.map((v) => leaf('sharingLabel', 'is', v)), mode('sharingLabels')))
   push(conditions, combine(state.ageRatings.map((v) => leaf('ageRating', 'is', ageRatingValue(v))), mode('ageRatings')))
   push(conditions, combine(state.languages.map((v) => leaf('language', 'is', v)), mode('languages')))
   push(conditions, combine(yearConditions(state.releaseYears), mode('releaseYears')))
@@ -55,12 +73,21 @@ export function buildSeriesSearch(state: FilterState, libraryId?: string): Serie
 
 export function buildBookSearch(state: FilterState, libraryId?: string): BookSearch {
   const mode = (g: GroupKey): GroupMode => (state.matchAll.includes(g) ? 'all' : 'any')
+  const readOp: SearchOperator = state.exclude.includes('readStatus') ? 'isNot' : 'is'
   const conditions: SearchCondition[] = []
   if (libraryId) conditions.push(leaf('libraryId', 'is', libraryId))
-  push(conditions, combine(state.readStatus.map((v) => leaf('readStatus', 'is', v)), mode('readStatus')))
+  push(conditions, combine(state.readStatus.map((v) => leaf('readStatus', readOp, v)), mode('readStatus')))
   push(conditions, combine(state.tags.map((v) => leaf('tag', 'is', v)), mode('tags')))
   push(conditions, combine(state.mediaProfiles.map((v) => leaf('mediaProfile', 'is', v)), mode('mediaProfiles')))
   push(conditions, combine(state.mediaStatuses.map((v) => leaf('mediaStatus', 'is', v)), mode('mediaStatuses')))
+  // "no poster" must also match books with zero thumbnail rows, so it is isNot selected, not is unselected
+  push(
+    conditions,
+    combine(
+      state.poster.map((v) => (v === 'missing' ? leaf('poster', 'isNot', { selected: true }) : leaf('poster', 'is', { selected: true }))),
+      mode('poster'),
+    ),
+  )
   push(conditions, combine(yearConditions(state.releaseYears), mode('releaseYears')))
   push(conditions, combine(authorConditions(state.authors), mode('authors')))
   return finalize(state, conditions)

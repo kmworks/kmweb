@@ -6,15 +6,21 @@ import type { AuthorFilter, FilterGroupDef, FilterState, GroupKey, GroupMode } f
 const MULTI_KEYS: GroupKey[] = [
   'readStatus',
   'seriesStatus',
+  'complete',
+  'oneshot',
+  'deleted',
+  'letter',
   'publishers',
   'genres',
   'tags',
+  'sharingLabels',
   'ageRatings',
   'languages',
   'releaseYears',
   'authors',
   'mediaProfiles',
   'mediaStatuses',
+  'poster',
 ]
 
 // names may contain commas, so the role is split off at the last comma
@@ -32,16 +38,23 @@ export function parseFilterState(params: URLSearchParams): FilterState {
     q: params.get('q') ?? '',
     readStatus: params.getAll('readStatus'),
     seriesStatus: params.getAll('seriesStatus'),
+    complete: params.getAll('complete'),
+    oneshot: params.getAll('oneshot'),
+    deleted: params.getAll('deleted'),
+    letter: params.getAll('letter'),
     publishers: params.getAll('publishers'),
     genres: params.getAll('genres'),
     tags: params.getAll('tags'),
+    sharingLabels: params.getAll('sharingLabels'),
     ageRatings: params.getAll('ageRatings'),
     languages: params.getAll('languages'),
     releaseYears: params.getAll('releaseYears'),
     authors: params.getAll('authors').map(parseAuthor),
     mediaProfiles: params.getAll('mediaProfiles'),
     mediaStatuses: params.getAll('mediaStatuses'),
+    poster: params.getAll('poster'),
     matchAll: params.getAll('ma').filter((v): v is GroupKey => (MULTI_KEYS as string[]).includes(v)),
+    exclude: params.getAll('not').filter((v): v is GroupKey => (MULTI_KEYS as string[]).includes(v)),
   }
 }
 
@@ -54,15 +67,21 @@ export function activeFilterCount(s: FilterState): number {
   return (
     s.readStatus.length +
     s.seriesStatus.length +
+    s.complete.length +
+    s.oneshot.length +
+    s.deleted.length +
+    s.letter.length +
     s.publishers.length +
     s.genres.length +
     s.tags.length +
+    s.sharingLabels.length +
     s.ageRatings.length +
     s.languages.length +
     s.releaseYears.length +
     s.authors.length +
     s.mediaProfiles.length +
-    s.mediaStatuses.length
+    s.mediaStatuses.length +
+    s.poster.length
   )
 }
 
@@ -88,10 +107,11 @@ export function describeActiveFilters(state: FilterState, groups: FilterGroupDef
       }
       continue
     }
+    const negated = state.exclude.includes(def.key)
     const values = state[def.key] as string[]
     for (const v of values) {
       const label = def.options?.find((o) => o.value === v)?.label ?? v
-      items.push({ key: `${def.key}:${v}`, label: `${def.label}: ${label}`, group: def.key, value: v })
+      items.push({ key: `${def.key}:${v}`, label: `${def.label}: ${negated ? 'not ' : ''}${label}`, group: def.key, value: v })
     }
   }
   if (state.q.trim()) items.push({ key: 'q', label: `Search: ${state.q}`, group: 'q', value: state.q })
@@ -118,7 +138,19 @@ export function useBrowseFilters() {
     [searchParams, setSearchParams],
   )
 
-  const toggleValue = useCallback((key: GroupKey, value: string) => update((p) => toggleParam(p, key, value)), [update])
+  const toggleValue = useCallback(
+    (key: GroupKey, value: string) =>
+      update((p) => {
+        toggleParam(p, key, value)
+        // an emptied group must not keep its negation flag around
+        if (p.getAll(key).length === 0) {
+          const rest = p.getAll('not').filter((v) => v !== key)
+          p.delete('not')
+          for (const v of rest) p.append('not', v)
+        }
+      }),
+    [update],
+  )
 
   const toggleAuthor = useCallback(
     (author: AuthorFilter) => update((p) => toggleParam(p, 'authors', serializeAuthor(author))),
@@ -132,6 +164,28 @@ export function useBrowseFilters() {
         p.delete('ma')
         // 'any' is the default and stays out of the URL
         for (const v of mode === 'all' ? [...rest, key] : rest) p.append('ma', v)
+      }),
+    [update],
+  )
+
+  const setNegated = useCallback(
+    (key: GroupKey, negated: boolean) =>
+      update((p) => {
+        const rest = p.getAll('not').filter((v) => v !== key)
+        p.delete('not')
+        // non-negated is the default and stays out of the URL
+        for (const v of negated ? [...rest, key] : rest) p.append('not', v)
+      }),
+    [update],
+  )
+
+  /** single-select groups (e.g. first letter): re-picking the active value clears it */
+  const setExclusive = useCallback(
+    (key: GroupKey, value: string) =>
+      update((p) => {
+        const current = p.get(key)
+        p.delete(key)
+        if (current !== value) p.set(key, value)
       }),
     [update],
   )
@@ -153,9 +207,10 @@ export function useBrowseFilters() {
       update((p) => {
         for (const k of MULTI_KEYS) p.delete(k)
         p.delete('ma')
+        p.delete('not')
       }),
     [update],
   )
 
-  return { state, toggleValue, toggleAuthor, setMode, setQ, clearAll }
+  return { state, toggleValue, toggleAuthor, setMode, setNegated, setExclusive, setQ, clearAll }
 }

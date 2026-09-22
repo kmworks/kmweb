@@ -17,6 +17,8 @@ import { activeFilterCount, serializeFilters, useBrowseFilters } from '@/compone
 import { serializeSort, useSortState } from '@/components/filters/sort'
 import { buildBookSearch } from '@/components/filters/builders'
 import { BOOK_DEFAULT_SORT, BOOK_FILTER_GROUPS, BOOK_SORT_OPTIONS } from '@/components/filters/types'
+import { cardSelection, useSelection } from '@/components/selection/useSelection'
+import { BooksSelectionBar } from '@/components/browse/BooksSelectionBar'
 
 export function BrowseBooksPage() {
   const { libraryId } = useParams()
@@ -31,12 +33,14 @@ export function BrowseBooksPage() {
   const filters = useBrowseFilters()
   const sort = useSortState(`books:${libraryId ?? 'all'}`, BOOK_DEFAULT_SORT)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const selection = useSelection()
 
   const search = useMemo(() => buildBookSearch(filters.state, libraryId), [filters.state, libraryId])
   const sortParam = serializeSort(sort.current)
+  const filterKey = serializeFilters(filters.state)
 
   const q = useInfiniteQuery({
-    queryKey: ['books', 'list', libraryId ?? 'all', serializeFilters(filters.state), sortParam],
+    queryKey: ['books', 'list', libraryId ?? 'all', filterKey, sortParam],
     queryFn: ({ pageParam }) => booksApi.list({ search, page: pageParam, size: 50, sort: [sortParam] }),
     getNextPageParam: (last) => (last.last ? undefined : last.number + 1),
     initialPageParam: 0,
@@ -50,6 +54,12 @@ export function BrowseBooksPage() {
     // isPlaceholderData means a stale query is shown while filters changed; don't page the old one
     if (hasNextPage && !isFetchingNextPage && !isPlaceholderData) void fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, isPlaceholderData, fetchNextPage])
+
+  // a changed result set invalidates any selection made against the old one
+  const clearSelection = selection.clear
+  useEffect(() => {
+    clearSelection()
+  }, [filterKey, sortParam, libraryId, clearSelection])
 
   return (
     <div>
@@ -83,7 +93,7 @@ export function BrowseBooksPage() {
         <>
           <MediaGrid>
             {items.map((b) => (
-              <BookCard key={b.id} book={b} showSeries />
+              <BookCard key={b.id} book={b} showSeries selection={cardSelection(selection, b.id)} />
             ))}
           </MediaGrid>
           {isFetchingNextPage && (
@@ -106,8 +116,11 @@ export function BrowseBooksPage() {
         onToggleValue={filters.toggleValue}
         onToggleAuthor={filters.toggleAuthor}
         onSetMode={filters.setMode}
+        onSetNegated={filters.setNegated}
+        onSetExclusive={filters.setExclusive}
         onClearAll={filters.clearAll}
       />
+      <BooksSelectionBar selection={selection} loadedIds={items.map((b) => b.id)} />
     </div>
   )
 }

@@ -79,6 +79,8 @@
 @layer base {
   html {
     scrollbar-color: var(--line-strong) transparent;
+    /* block page-level pinch and double-tap zoom (iOS ignores user-scalable=no); containers that pan or pinch set their own touch-action */
+    touch-action: pan-x pan-y;
   }
 
   body {

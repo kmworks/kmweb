@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { BookOpen, CircleNotch, Images, Warning } from '@phosphor-icons/react'
 import { booksApi } from '@/lib/api/books'
 import { readlistsApi } from '@/lib/api/collections'
+import { bookPostersApi, readListPostersApi, seriesPostersApi } from '@/lib/api/posters'
 import { seriesApi } from '@/lib/api/series'
 import { ApiError } from '@/lib/api/client'
 import type { BookDto, ReadingDirection } from '@/lib/api/types'
-import { canDownload, useAuthStore } from '@/lib/store/auth'
+import { canDownload, isAdmin, useAuthStore } from '@/lib/store/auth'
+import { useThumbnailBust } from '@/lib/store/thumbnails'
 import {
   READER_BACKGROUNDS,
   useReaderSettings,
@@ -22,7 +24,7 @@ import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ContinuousReader } from '@/components/reader/ContinuousReader'
 import { PagedReader } from '@/components/reader/PagedReader'
-import { ReaderChrome } from '@/components/reader/ReaderChrome'
+import { ReaderChrome, type PosterTarget } from '@/components/reader/ReaderChrome'
 import { ReaderToast, type Toast } from '@/components/reader/ReaderToast'
 import { SettingsPanel } from '@/components/reader/SettingsPanel'
 import { ShortcutsHelp } from '@/components/reader/ShortcutsHelp'
@@ -60,6 +62,7 @@ export function ReaderPage() {
 
 function Reader({ bookId }: { bookId: string }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams, setSearchParams] = useSearchParams()
   const context = searchParams.get('context')
   const contextId = searchParams.get('contextId')
@@ -69,6 +72,7 @@ function Reader({ bookId }: { bookId: string }) {
   const settingsDirection = useReaderSettings((s) => s.readingDirection)
   const background = useReaderSettings((s) => s.background)
   const user = useAuthStore((s) => s.user)
+  const admin = isAdmin(user)
 
   const bookQuery = useQuery({ queryKey: ['books', 'detail', bookId], queryFn: () => booksApi.get(bookId) })
   const book = bookQuery.data
@@ -115,6 +119,7 @@ function Reader({ bookId }: { bookId: string }) {
   const [sessionDirection, setSessionDirection] = useState<ReadingDirection | null>(null)
   const [toast, setToast] = useState<Toast | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [posterBusy, setPosterBusy] = useState(false)
 
   const direction = sessionDirection ?? settingsDirection
 
@@ -446,6 +451,49 @@ function Reader({ bookId }: { bookId: string }) {
     a.click()
   }
 
+  const fetchPageBlob = async (): Promise<Blob> => {
+    const res = await fetch(urls.bookPage(bookId, page), { credentials: 'same-origin' })
+    if (!res.ok) throw new Error(`Page request failed (${res.status})`)
+    return res.blob()
+  }
+
+  const setPoster = async (target: PosterTarget) => {
+    if (posterBusy) return
+    setPosterBusy(true)
+    try {
+      const blob = await fetchPageBlob()
+      const targetId = target === 'book' ? bookId : target === 'series' ? book.seriesId : contextId!
+      if (target === 'book') await bookPostersApi.upload(bookId, blob, true)
+      else if (target === 'series') await seriesPostersApi.upload(book.seriesId, blob, true)
+      else await readListPostersApi.upload(targetId, blob, true)
+      useThumbnailBust.getState().bump(targetId)
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['series'] })
+      queryClient.invalidateQueries({ queryKey: ['readlists'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      showToast(`Page ${page} set as ${target === 'readlist' ? 'read list' : target} poster`)
+    } catch {
+      showToast('Could not set the poster')
+    } finally {
+      setPosterBusy(false)
+    }
+  }
+
+  const downloadPage = async () => {
+    try {
+      const blob = await fetchPageBlob()
+      const ext = blob.type === 'image/png' ? 'png' : blob.type === 'image/webp' ? 'webp' : blob.type === 'image/gif' ? 'gif' : 'jpg'
+      const base = book.seriesTitle.replace(/[\\/:*?"<>|]/g, '_')
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `${base} - page ${page}.${ext}`
+      a.click()
+      URL.revokeObjectURL(a.href)
+    } catch {
+      showToast('Could not download the page')
+    }
+  }
+
   return (
     <div className="fixed inset-0 overflow-hidden select-none" style={{ background: READER_BACKGROUNDS[background] }}>
       {direction === 'WEBTOON' ? (
@@ -478,6 +526,9 @@ function Reader({ bookId }: { bookId: string }) {
         incognito={incognito}
         isFullscreen={isFullscreen}
         canDownloadFile={canDownload(user)}
+        canSetPoster={admin}
+        readListContext={context === 'READLIST' && !!contextId}
+        posterBusy={posterBusy}
         hasPreviousBook={!!siblingPrevious}
         hasNextBook={!!siblingNext}
         onClose={exitReader}
@@ -491,6 +542,8 @@ function Reader({ bookId }: { bookId: string }) {
         onToggleHelp={() => setHelpOpen((v) => !v)}
         onToggleFullscreen={toggleFullscreen}
         onDownload={downloadFile}
+        onDownloadPage={downloadPage}
+        onSetPoster={setPoster}
         onGoToBook={exitReader}
       />
 

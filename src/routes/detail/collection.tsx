@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CircleNotch, PencilSimple, Trash } from '@phosphor-icons/react'
+import { CircleNotch, DotsThreeVertical, Image, ListChecks, PencilSimple, Plus, Trash } from '@phosphor-icons/react'
 import { collectionsApi } from '@/lib/api/collections'
 import type { CollectionDto } from '@/lib/api/types'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
@@ -9,6 +9,8 @@ import { plural } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { BackButton } from '@/components/ui/BackButton'
 import { Dialog } from '@/components/ui/Dialog'
+import { IconButton } from '@/components/ui/IconButton'
+import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { TextField } from '@/components/ui/TextField'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -20,6 +22,9 @@ import { ConfirmDeleteDialog } from '@/components/detail/ConfirmDeleteDialog'
 import { OrderBadge } from '@/components/detail/OrderBadge'
 import { ReadStatusFilterControl, type ReadStatusFilter } from '@/components/detail/ReadStatusFilter'
 import { useSentinel } from '@/components/detail/useSentinel'
+import { EditCollectionMembers } from '@/components/collections/EditCollectionMembers'
+import { SeriesPickerDialog } from '@/components/collections/SeriesPickerDialog'
+import { PosterManager } from '@/components/metadata/PosterManager'
 
 const PAGE_SIZE = 48
 
@@ -76,8 +81,11 @@ export function CollectionDetailPage() {
   const queryClient = useQueryClient()
   const admin = isAdmin(useAuthStore((s) => s.user))
   const [readStatus, setReadStatus] = useState<ReadStatusFilter>('ALL')
+  const [editing, setEditing] = useState(false)
   const [renameOpen, setRenameOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [addSeriesOpen, setAddSeriesOpen] = useState(false)
+  const [postersOpen, setPostersOpen] = useState(false)
 
   const collectionQuery = useQuery({
     queryKey: ['collections', collectionId],
@@ -96,7 +104,7 @@ export function CollectionDetailPage() {
       }),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.last ? undefined : last.number + 1),
-    enabled: !!collection,
+    enabled: !!collection && !editing,
   })
 
   const deleteMutation = useMutation({
@@ -104,6 +112,15 @@ export function CollectionDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['collections'] })
       navigate('/collections')
+    },
+  })
+
+  const addSeriesMutation = useMutation({
+    mutationFn: (ids: string[]) =>
+      collectionsApi.update(collectionId, { seriesIds: [...(collection?.seriesIds ?? []), ...ids] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] })
+      setAddSeriesOpen(false)
     },
   })
 
@@ -141,55 +158,80 @@ export function CollectionDetailPage() {
         title={collection.name}
         subtitle={plural(collection.seriesIds.length, 'series', 'series')}
         actions={
-          admin && (
+          admin &&
+          !editing && (
             <>
-              <Button variant="secondary" size="sm" onClick={() => setRenameOpen(true)}>
-                <PencilSimple className="size-4" /> Rename
+              <Button variant="secondary" size="sm" onClick={() => setAddSeriesOpen(true)}>
+                <Plus className="size-4" /> Add series
               </Button>
-              <Button variant="danger" size="sm" onClick={() => setDeleteOpen(true)}>
-                <Trash className="size-4" /> Delete
+              <Button variant="secondary" size="sm" onClick={() => setEditing(true)}>
+                <ListChecks className="size-4" /> Edit
               </Button>
+              <Menu
+                trigger={
+                  <IconButton label="More actions" className="size-8">
+                    <DotsThreeVertical className="size-5" />
+                  </IconButton>
+                }
+              >
+                <MenuItem onSelect={() => setPostersOpen(true)}>
+                  <Image className="size-4" /> Manage posters
+                </MenuItem>
+                <MenuItem onSelect={() => setRenameOpen(true)}>
+                  <PencilSimple className="size-4" /> Rename
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem danger onSelect={() => setDeleteOpen(true)}>
+                  <Trash className="size-4" /> Delete
+                </MenuItem>
+              </Menu>
             </>
           )
         }
       />
 
-      <div className="mb-4">
-        <ReadStatusFilterControl value={readStatus} onChange={setReadStatus} />
-      </div>
-
-      {seriesQuery.isPending ? (
-        <GridSkeleton />
-      ) : seriesQuery.error ? (
-        <EmptyState
-          title="Could not load series"
-          body={seriesQuery.error.message}
-          action={
-            <Button variant="secondary" onClick={() => seriesQuery.refetch()}>
-              Retry
-            </Button>
-          }
-        />
-      ) : allSeries.length === 0 ? (
-        <EmptyState
-          title="No series"
-          body={readStatus === 'ALL' ? 'This collection is empty.' : 'No series match this filter.'}
-        />
+      {editing ? (
+        <EditCollectionMembers collection={collection} onExit={() => setEditing(false)} />
       ) : (
-        <MediaGrid>
-          {allSeries.map((s, i) => (
-            <div key={s.id} className="relative">
-              <SeriesCard series={s} />
-              {collection.ordered && <OrderBadge index={i + 1} />}
+        <>
+          <div className="mb-4">
+            <ReadStatusFilterControl value={readStatus} onChange={setReadStatus} />
+          </div>
+
+          {seriesQuery.isPending ? (
+            <GridSkeleton />
+          ) : seriesQuery.error ? (
+            <EmptyState
+              title="Could not load series"
+              body={seriesQuery.error.message}
+              action={
+                <Button variant="secondary" onClick={() => seriesQuery.refetch()}>
+                  Retry
+                </Button>
+              }
+            />
+          ) : allSeries.length === 0 ? (
+            <EmptyState
+              title="No series"
+              body={readStatus === 'ALL' ? 'This collection is empty.' : 'No series match this filter.'}
+            />
+          ) : (
+            <MediaGrid>
+              {allSeries.map((s, i) => (
+                <div key={s.id} className="relative">
+                  <SeriesCard series={s} />
+                  {collection.ordered && <OrderBadge index={i + 1} />}
+                </div>
+              ))}
+            </MediaGrid>
+          )}
+          <div ref={sentinelRef} />
+          {seriesQuery.isFetchingNextPage && (
+            <div className="mt-6 flex justify-center">
+              <CircleNotch className="size-5 animate-spin text-ink-3" />
             </div>
-          ))}
-        </MediaGrid>
-      )}
-      <div ref={sentinelRef} />
-      {seriesQuery.isFetchingNextPage && (
-        <div className="mt-6 flex justify-center">
-          <CircleNotch className="size-5 animate-spin text-ink-3" />
-        </div>
+          )}
+        </>
       )}
 
       <RenameCollectionDialog open={renameOpen} onOpenChange={setRenameOpen} collection={collection} />
@@ -200,6 +242,24 @@ export function CollectionDetailPage() {
         name={collection.name}
         loading={deleteMutation.isPending}
         onConfirm={() => deleteMutation.mutate()}
+      />
+      <SeriesPickerDialog
+        open={addSeriesOpen}
+        onOpenChange={setAddSeriesOpen}
+        title="Add series"
+        confirmLabel="Add to collection"
+        mode="multi"
+        excludeIds={new Set(collection.seriesIds)}
+        onConfirm={(selected) => addSeriesMutation.mutate(selected.map((s) => s.id))}
+        confirming={addSeriesMutation.isPending}
+        error={addSeriesMutation.error?.message}
+      />
+      <PosterManager
+        open={postersOpen}
+        onClose={() => setPostersOpen(false)}
+        kind="collection"
+        entityId={collection.id}
+        title={collection.name}
       />
     </div>
   )

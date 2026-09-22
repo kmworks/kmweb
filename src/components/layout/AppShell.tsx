@@ -5,15 +5,26 @@ import {
   Books,
   BookBookmark,
   BookmarkSimple,
+  ClockCounterClockwise,
+  Copy,
+  FileMagnifyingGlass,
   Gauge,
   GearSix,
   HardDrives,
   House,
+  ImageBroken,
+  Images,
   List,
   MagnifyingGlass,
+  Megaphone,
   Moon,
+  Palette,
+  Playlist,
+  PushPin,
+  Rocket,
   SignOut,
   Sun,
+  TrayArrowDown,
   UserCircle,
   Users,
   CaretDown,
@@ -27,11 +38,13 @@ import { serverApi } from '@/lib/api/users'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { useUiStore } from '@/lib/store/ui'
 import { useLibraryPrefs } from '@/lib/store/libraryPrefs'
+import { usePinnedLibraries } from '@/lib/store/clientSettings'
 import { queryClient } from '@/lib/queryClient'
 import { LogoMark } from '@/components/LogoMark'
 import { IconButton } from '@/components/ui/IconButton'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/Menu'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
 
 function NavItem({
   to,
@@ -39,12 +52,14 @@ function NavItem({
   children,
   end,
   onClick,
+  trailing,
 }: {
   to: string
   icon: React.ReactNode
   children: React.ReactNode
   end?: boolean
   onClick?: () => void
+  trailing?: React.ReactNode
 }) {
   return (
     <NavLink
@@ -59,7 +74,8 @@ function NavItem({
       }
     >
       <span className="[&_svg]:size-[18px]">{icon}</span>
-      <span className="truncate">{children}</span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {trailing}
     </NavLink>
   )
 }
@@ -68,6 +84,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { data: libraries, isLoading } = useQuery({ queryKey: ['libraries'], queryFn: librariesApi.list })
   const preferredTab = useLibraryPrefs((s) => s.tab)
   const user = useAuthStore((s) => s.user)
+  const { pinned } = usePinnedLibraries()
+  const [pinDialogOpen, setPinDialogOpen] = useState(false)
+
+  const pinnedIndex = new Map((pinned ?? []).map((id, i) => [id, i]))
+  const pinRank = (id: string) => pinnedIndex.get(id) ?? Number.MAX_SAFE_INTEGER
+  const sortedLibraries = libraries?.slice().sort((a, b) => pinRank(a.id) - pinRank(b.id))
 
   return (
     <div className="flex h-full flex-col">
@@ -84,8 +106,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           Search
         </NavItem>
 
-        <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
-          Libraries
+        <div className="mt-5 mb-1.5 flex items-center justify-between px-3">
+          <span className="text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">Libraries</span>
+          {libraries && libraries.length > 0 && (
+            <IconButton
+              label="Manage pinned libraries"
+              className="-my-1 size-6 rounded-md [&_svg]:size-3.5"
+              onClick={() => setPinDialogOpen(true)}
+            >
+              <PushPin />
+            </IconButton>
+          )}
         </div>
         {isLoading && (
           <div className="flex flex-col gap-2 px-3">
@@ -93,12 +124,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <Skeleton className="h-6 w-1/2" />
           </div>
         )}
-        {libraries?.map((lib) => (
+        {sortedLibraries?.map((lib) => (
           <NavItem
             key={lib.id}
             to={`/libraries/${lib.id}/${preferredTab[lib.id] ?? 'series'}`}
             icon={<BookBookmark />}
             onClick={onNavigate}
+            trailing={
+              pinnedIndex.has(lib.id) ? (
+                <PushPin weight="fill" className="size-3 shrink-0 text-ink-3" aria-label="Pinned" />
+              ) : undefined
+            }
           >
             {lib.name}
           </NavItem>
@@ -118,6 +154,16 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         {isAdmin(user) && (
           <>
             <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
+              Import
+            </div>
+            <NavItem to="/import/books" icon={<TrayArrowDown />} onClick={onNavigate}>
+              Import books
+            </NavItem>
+            <NavItem to="/import/readlist" icon={<Playlist />} onClick={onNavigate}>
+              Import readlist
+            </NavItem>
+
+            <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
               Administration
             </div>
             <NavItem to="/admin/libraries" icon={<HardDrives />} onClick={onNavigate}>
@@ -132,10 +178,35 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <NavItem to="/admin/server" icon={<Gauge />} onClick={onNavigate}>
               Server
             </NavItem>
+            <NavItem to="/admin/duplicates" icon={<Copy />} onClick={onNavigate}>
+              Duplicates
+            </NavItem>
+            <NavItem to="/admin/duplicate-pages" icon={<Images />} onClick={onNavigate}>
+              Duplicate pages
+            </NavItem>
+            <NavItem to="/admin/media-analysis" icon={<FileMagnifyingGlass />} onClick={onNavigate}>
+              Media analysis
+            </NavItem>
+            <NavItem to="/admin/missing-posters" icon={<ImageBroken />} onClick={onNavigate}>
+              Missing posters
+            </NavItem>
+            <NavItem to="/admin/history" icon={<ClockCounterClockwise />} onClick={onNavigate}>
+              History
+            </NavItem>
+            <NavItem to="/admin/announcements" icon={<Megaphone />} onClick={onNavigate}>
+              Announcements
+            </NavItem>
+            <NavItem to="/admin/updates" icon={<Rocket />} onClick={onNavigate}>
+              Updates
+            </NavItem>
+            <NavItem to="/admin/ui" icon={<Palette />} onClick={onNavigate}>
+              UI settings
+            </NavItem>
           </>
         )}
       </nav>
 
+      <PinLibrariesDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
       <SidebarFooter />
     </div>
   )
@@ -223,7 +294,7 @@ function TopSearchBox() {
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Search series, books, authors…"
-        className="h-9 w-full rounded-lg border border-line bg-surface pr-12 pl-9 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+        className="h-9 w-full rounded-lg border border-line bg-surface pr-12 pl-9 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
       />
       <kbd className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border border-line bg-raised px-1.5 text-[11px] text-ink-3">
         /

@@ -1,7 +1,19 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ArrowRight, BookmarkSimple, BookOpen, Checks, DotsThreeVertical } from '@phosphor-icons/react'
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowsClockwise,
+  BookmarkSimple,
+  BookOpen,
+  Checks,
+  DotsThreeVertical,
+  FileMagnifyingGlass,
+  ImageSquare,
+  PencilSimple,
+  Trash,
+} from '@phosphor-icons/react'
 import { booksApi } from '@/lib/api/books'
 import { librariesApi } from '@/lib/api/libraries'
 import { canDownload, isAdmin, useAuthStore } from '@/lib/store/auth'
@@ -24,6 +36,10 @@ import { DetailError } from '@/components/detail/DetailError'
 import { Summary } from '@/components/detail/Summary'
 import { DownloadLink } from '@/components/detail/DownloadLink'
 import { AddToReadListDialog } from '@/components/detail/AddToReadListDialog'
+import { ConfirmDeleteDialog } from '@/components/detail/ConfirmDeleteDialog'
+import { EditBooksDialog } from '@/components/metadata/EditBooksDialog'
+import { PosterManager } from '@/components/metadata/PosterManager'
+import { ReaderToast, type Toast } from '@/components/reader/ReaderToast'
 
 function Field({ term, mono, children }: { term: string; mono?: boolean; children: ReactNode }) {
   return (
@@ -41,6 +57,18 @@ export function BookDetailPage() {
   const user = useAuthStore((s) => s.user)
   const bust = useBust(bookId)
   const [addToListOpen, setAddToListOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [postersOpen, setPostersOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [toast, setToast] = useState<Toast | null>(null)
+  const toastTimer = useRef<number | undefined>(undefined)
+  const toastId = useRef(0)
+  const showToast = useCallback((message: string) => {
+    window.clearTimeout(toastTimer.current)
+    setToast({ id: ++toastId.current, message })
+    toastTimer.current = window.setTimeout(() => setToast(null), 3000)
+  }, [])
+  useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
   const bookQuery = useQuery({ queryKey: ['books', bookId], queryFn: () => booksApi.get(bookId) })
   const book = bookQuery.data
@@ -71,6 +99,28 @@ export function BookDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['readlists'] })
     },
+  })
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => booksApi.analyze(bookId),
+    onSuccess: () => showToast('Analysis queued'),
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not queue the analysis'),
+  })
+  const refreshMutation = useMutation({
+    mutationFn: () => booksApi.refreshMetadata(bookId),
+    onSuccess: () => showToast('Metadata refresh queued'),
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not queue the refresh'),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: () => booksApi.deleteFile(bookId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['series'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      if (book?.oneshot) navigate('/series')
+      else navigate(`/series/${book?.seriesId ?? ''}`)
+    },
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not delete the file'),
   })
 
   const title = book ? book.metadata.title || book.name : ''
@@ -138,9 +188,23 @@ export function BookDetailPage() {
                 }
               >
                 {isAdmin(user) && (
-                  <MenuItem onSelect={() => setAddToListOpen(true)}>
-                    <BookmarkSimple className="size-4" /> Add to read list
-                  </MenuItem>
+                  <>
+                    <MenuItem onSelect={() => setEditOpen(true)}>
+                      <PencilSimple className="size-4" /> Edit metadata
+                    </MenuItem>
+                    <MenuItem onSelect={() => setPostersOpen(true)}>
+                      <ImageSquare className="size-4" /> Manage posters
+                    </MenuItem>
+                    <MenuItem onSelect={() => analyzeMutation.mutate()} disabled={analyzeMutation.isPending}>
+                      <FileMagnifyingGlass className="size-4" /> Analyze
+                    </MenuItem>
+                    <MenuItem onSelect={() => refreshMutation.mutate()} disabled={refreshMutation.isPending}>
+                      <ArrowsClockwise className="size-4" /> Refresh metadata
+                    </MenuItem>
+                    <MenuItem onSelect={() => setAddToListOpen(true)}>
+                      <BookmarkSimple className="size-4" /> Add to read list
+                    </MenuItem>
+                  </>
                 )}
                 {isAdmin(user) && (prev || next) && <MenuSeparator />}
                 {prev && (
@@ -151,6 +215,12 @@ export function BookDetailPage() {
                 {next && (
                   <MenuItem onSelect={() => navigate(`/book/${next.id}`)}>
                     <ArrowRight className="size-4" /> Next book
+                  </MenuItem>
+                )}
+                {isAdmin(user) && <MenuSeparator />}
+                {isAdmin(user) && (
+                  <MenuItem danger onSelect={() => setDeleteOpen(true)}>
+                    <Trash className="size-4" /> Delete file
                   </MenuItem>
                 )}
               </Menu>
@@ -243,6 +313,17 @@ export function BookDetailPage() {
       )}
 
       <AddToReadListDialog bookId={book.id} open={addToListOpen} onOpenChange={setAddToListOpen} />
+      <EditBooksDialog open={editOpen} onClose={() => setEditOpen(false)} bookIds={[book.id]} />
+      <PosterManager open={postersOpen} onClose={() => setPostersOpen(false)} kind="book" entityId={book.id} title={title} />
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete book file"
+        name={`the file of ${title}`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+      />
+      <ReaderToast toast={toast} />
     </div>
   )
 }

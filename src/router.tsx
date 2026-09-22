@@ -15,12 +15,23 @@ import { SeriesDetailPage } from '@/routes/detail/series'
 import { BookDetailPage } from '@/routes/detail/book'
 import { CollectionDetailPage } from '@/routes/detail/collection'
 import { ReadListDetailPage } from '@/routes/detail/readlist'
+import { OneshotDetailPage } from '@/routes/detail/oneshot'
 import { SearchPage } from '@/routes/search'
 import { AccountPage } from '@/routes/account'
 import { AdminLibrariesPage } from '@/routes/admin/libraries'
 import { AdminUsersPage } from '@/routes/admin/users'
 import { AdminSettingsPage } from '@/routes/admin/settings'
 import { AdminServerPage } from '@/routes/admin/server'
+import { AdminDuplicatesPage } from '@/routes/admin/duplicates'
+import { AdminDuplicatePagesPage } from '@/routes/admin/duplicate-pages'
+import { AdminMediaAnalysisPage } from '@/routes/admin/media-analysis'
+import { AdminMissingPostersPage } from '@/routes/admin/missing-posters'
+import { AdminHistoryPage } from '@/routes/admin/history'
+import { AdminAnnouncementsPage } from '@/routes/admin/announcements'
+import { AdminUpdatesPage } from '@/routes/admin/updates'
+import { AdminUiPage } from '@/routes/admin/ui'
+import { ImportBooksPage } from '@/routes/import/books'
+import { ImportReadListPage } from '@/routes/import/readlist'
 import { NotFoundPage } from '@/routes/not-found'
 import { ReaderSplash } from '@/components/reader/ReaderSplash'
 
@@ -59,6 +70,7 @@ export const router = createBrowserRouter([
           { path: '/readlists', element: <BrowseReadListsPage /> },
           { path: '/readlists/:readListId', element: <ReadListDetailPage /> },
           { path: '/series/:seriesId', element: <SeriesDetailPage /> },
+          { path: '/oneshot/:seriesId', element: <OneshotDetailPage /> },
           { path: '/book/:bookId', element: <BookDetailPage /> },
           { path: '/search', element: <SearchPage /> },
           { path: '/account', element: <AccountPage /> },
@@ -70,6 +82,16 @@ export const router = createBrowserRouter([
               { path: '/admin/users', element: <AdminUsersPage /> },
               { path: '/admin/settings', element: <AdminSettingsPage /> },
               { path: '/admin/server', element: <AdminServerPage /> },
+              { path: '/admin/duplicates', element: <AdminDuplicatesPage /> },
+              { path: '/admin/duplicate-pages', element: <AdminDuplicatePagesPage /> },
+              { path: '/admin/media-analysis', element: <AdminMediaAnalysisPage /> },
+              { path: '/admin/missing-posters', element: <AdminMissingPostersPage /> },
+              { path: '/admin/history', element: <AdminHistoryPage /> },
+              { path: '/admin/announcements', element: <AdminAnnouncementsPage /> },
+              { path: '/admin/updates', element: <AdminUpdatesPage /> },
+              { path: '/admin/ui', element: <AdminUiPage /> },
+              { path: '/import/books', element: <ImportBooksPage /> },
+              { path: '/import/readlist', element: <ImportReadListPage /> },
             ],
           },
           { path: '*', element: <NotFoundPage /> },

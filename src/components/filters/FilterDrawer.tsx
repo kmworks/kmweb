@@ -16,6 +16,8 @@ interface FilterDrawerProps {
   onToggleValue: (key: GroupKey, value: string) => void
   onToggleAuthor: (author: AuthorFilter) => void
   onSetMode: (key: GroupKey, mode: GroupMode) => void
+  onSetNegated: (key: GroupKey, negated: boolean) => void
+  onSetExclusive: (key: GroupKey, value: string) => void
   onClearAll: () => void
 }
 
@@ -29,6 +31,8 @@ export function FilterDrawer({
   onToggleValue,
   onToggleAuthor,
   onSetMode,
+  onSetNegated,
+  onSetExclusive,
   onClearAll,
 }: FilterDrawerProps) {
   const reduce = useReducedMotion()
@@ -95,6 +99,8 @@ export function FilterDrawer({
                   onToggleValue={onToggleValue}
                   onToggleAuthor={onToggleAuthor}
                   onSetMode={onSetMode}
+                  onSetNegated={onSetNegated}
+                  onSetExclusive={onSetExclusive}
                 />
               ))}
             </div>

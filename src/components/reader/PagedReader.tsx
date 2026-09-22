@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react'
 import { useReducedMotion } from 'motion/react'
 import type { ReadingDirection } from '@/lib/api/types'
 import { useReaderSettings, type ScaleType } from '@/lib/store/readerSettings'
 import { buildSpreads, type SpreadPage } from '@/lib/utils/spreads'
 import { cn } from '@/lib/utils/cn'
 import { useWindowKeys } from './keys'
+import { usePinchZoom } from './usePinchZoom'
 
 interface PagedReaderProps {
   pages: SpreadPage[]
@@ -67,6 +68,13 @@ export function PagedReader({
   // hugging the content keeps horizontal overflow reachable by scroll while small content stays centered
   const hugContent = scale === 'ORIGINAL' || scale === 'HEIGHT'
 
+  const pinch = usePinchZoom({ zoomedTouchAction: 'none' })
+  const { reset: resetPinch } = pinch
+  // layout shifts (page turn, fit mode, direction) leave stale pan offsets behind
+  useLayoutEffect(() => {
+    resetPinch()
+  }, [spreadIndex, scale, pageLayout, direction, resetPinch])
+
   const goSpread = useCallback((i: number) => onPageChange(spreadCurrentPage(spreads[i])), [spreads, onPageChange])
   const prev = useCallback(() => {
     if (spreadIndex > 0) goSpread(spreadIndex - 1)
@@ -116,13 +124,16 @@ export function PagedReader({
   const pointerRef = useRef<{ x: number; y: number } | null>(null)
   const swipedRef = useRef(false)
   const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    pinch.onPointerDown(e)
     if (!swipe || !e.isPrimary) return
     pointerRef.current = { x: e.clientX, y: e.clientY }
   }
   const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    pinch.onPointerUp(e)
     const start = pointerRef.current
     pointerRef.current = null
     if (!start) return
+    if (pinch.gestureConsumed()) return
     const dx = e.clientX - start.x
     const dy = e.clientY - start.y
     if (vertical) {
@@ -135,11 +146,21 @@ export function PagedReader({
       ;(dx < 0 ? turnRight : turnLeft)()
     }
   }
+  const onPointerCancel = (e: React.PointerEvent<HTMLDivElement>) => {
+    pinch.onPointerCancel(e)
+    pointerRef.current = null
+  }
 
   // click regions instead of overlay zones: overlays would swallow wheel scrolling
   const onClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (swipedRef.current) {
       swipedRef.current = false
+      return
+    }
+    if (pinch.consumeClick()) return
+    // while zoomed a tap only toggles chrome; a page turn would dump the zoom
+    if (pinch.zoomed) {
+      onToggleChrome()
       return
     }
     const rect = e.currentTarget.getBoundingClientRect()
@@ -156,52 +177,60 @@ export function PagedReader({
   return (
     <div
       className="h-full w-full overflow-hidden"
+      style={{ touchAction: pinch.touchAction }}
       onClick={onClick}
       onPointerDown={onPointerDown}
+      onPointerMove={pinch.onPointerMove}
       onPointerUp={onPointerUp}
-      onPointerCancel={() => (pointerRef.current = null)}
+      onPointerCancel={onPointerCancel}
     >
       <div
-        className={cn(
-          'flex h-full w-full',
-          vertical ? 'flex-col' : flip && 'flex-row-reverse',
-          animate && 'transition-transform duration-300 ease-out-expo',
-        )}
-        style={{ transform }}
+        ref={pinch.targetRef}
+        className="h-full w-full"
+        style={{ transformOrigin: '0 0', willChange: pinch.zoomed ? 'transform' : undefined }}
       >
-        {spreads.map((spread, i) => {
-          const double = spread.length > 1
-          const near = Math.abs(i - spreadIndex) <= 2
-          return (
-            <div key={i} className="flex h-full w-full shrink-0 overflow-auto no-scrollbar">
-              <div
-                className={cn(
-                  'm-auto flex justify-center',
-                  flip && !vertical && 'flex-row-reverse',
-                  hugContent ? 'w-max min-w-full' : 'w-full',
-                  scrollable ? 'items-start' : 'items-center',
-                )}
-              >
-                {spread.map((p, j) => {
-                  const cls = imgClass(scale, double)
-                  const dim = p.width && p.height ? { aspectRatio: `${p.width} / ${p.height}` } : undefined
-                  return near || p.blank ? (
-                    <img
-                      key={p.number || `blank-${j}`}
-                      src={p.url}
-                      alt={p.blank ? '' : `Page ${p.number}`}
-                      draggable={false}
-                      className={cls}
-                      style={dim}
-                    />
-                  ) : (
-                    <div key={p.number} aria-hidden className={cls} style={dim} />
-                  )
-                })}
+        <div
+          className={cn(
+            'flex h-full w-full',
+            vertical ? 'flex-col' : flip && 'flex-row-reverse',
+            animate && 'transition-transform duration-300 ease-out-expo',
+          )}
+          style={{ transform }}
+        >
+          {spreads.map((spread, i) => {
+            const double = spread.length > 1
+            const near = Math.abs(i - spreadIndex) <= 2
+            return (
+              <div key={i} className="flex h-full w-full shrink-0 overflow-auto no-scrollbar">
+                <div
+                  className={cn(
+                    'm-auto flex justify-center',
+                    flip && !vertical && 'flex-row-reverse',
+                    hugContent ? 'w-max min-w-full' : 'w-full',
+                    scrollable ? 'items-start' : 'items-center',
+                  )}
+                >
+                  {spread.map((p, j) => {
+                    const cls = imgClass(scale, double)
+                    const dim = p.width && p.height ? { aspectRatio: `${p.width} / ${p.height}` } : undefined
+                    return near || p.blank ? (
+                      <img
+                        key={p.number || `blank-${j}`}
+                        src={p.url}
+                        alt={p.blank ? '' : `Page ${p.number}`}
+                        draggable={false}
+                        className={cls}
+                        style={dim}
+                      />
+                    ) : (
+                      <div key={p.number} aria-hidden className={cls} style={dim} />
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          )
-        })}
+            )
+          })}
+        </div>
       </div>
     </div>
   )

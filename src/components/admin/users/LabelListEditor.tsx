@@ -37,7 +37,7 @@ export function LabelListEditor({ label, values, onChange, placeholder }: LabelL
             }
           }}
           placeholder={placeholder}
-          className="h-10 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+          className="h-10 w-full rounded-lg border border-line bg-surface px-3 text-base text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
         />
         <Button type="button" onClick={add} disabled={!draft.trim()}>
           <Plus className="size-4" />

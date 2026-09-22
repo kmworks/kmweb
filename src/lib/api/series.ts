@@ -6,6 +6,7 @@ import type {
   Page,
   PageParams,
   SeriesDto,
+  SeriesMetadataUpdateDto,
   SeriesSearch,
 } from './types'
 
@@ -54,4 +55,11 @@ export const seriesApi = {
 
   markRead: (seriesId: string) => api.post<void>(`/api/v1/series/${seriesId}/read-progress`),
   markUnread: (seriesId: string) => api.delete<void>(`/api/v1/series/${seriesId}/read-progress`),
+
+  // Admin operations
+  patchMetadata: (seriesId: string, body: SeriesMetadataUpdateDto) =>
+    api.patch<void>(`/api/v1/series/${seriesId}/metadata`, body),
+  deleteFile: (seriesId: string) => api.delete<void>(`/api/v1/series/${seriesId}/file`),
+  analyze: (seriesId: string) => api.post<void>(`/api/v1/series/${seriesId}/analyze`),
+  refreshMetadata: (seriesId: string) => api.post<void>(`/api/v1/series/${seriesId}/metadata/refresh`),
 }

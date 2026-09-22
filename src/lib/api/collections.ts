@@ -1,5 +1,5 @@
 import { api, pageQuery } from './client'
-import type { BookDto, CollectionDto, Page, PageParams, ReadListDto, SeriesDto } from './types'
+import type { BookDto, CollectionDto, Page, PageParams, ReadListDto, ReadListRequestMatchDto, SeriesDto } from './types'
 
 export const collectionsApi = {
   list: (params?: PageParams & { search?: string; libraryId?: string[] }) =>
@@ -43,4 +43,11 @@ export const readlistsApi = {
   update: (readListId: string, body: Partial<{ name: string; summary: string; ordered: boolean; bookIds: string[] }>) =>
     api.patch<void>(`/api/v1/readlists/${readListId}`, body),
   delete: (readListId: string) => api.delete<void>(`/api/v1/readlists/${readListId}`),
+
+  /** Matches a ComicRack ReadingList XML file (multipart `file` part) against the library. */
+  matchComicRack: (file: Blob) => {
+    const form = new FormData()
+    form.append('file', file)
+    return api.upload<ReadListRequestMatchDto>('/api/v1/readlists/match/comicrack', form)
+  },
 }

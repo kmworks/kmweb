@@ -8,6 +8,7 @@ import { TaskQueuePanel } from '@/components/admin/server/TaskQueuePanel'
 import { TaskExecutionPanel } from '@/components/admin/server/TaskExecutionPanel'
 import { ScheduledTasksPanel } from '@/components/admin/server/ScheduledTasksPanel'
 import { SessionsPanel } from '@/components/admin/server/SessionsPanel'
+import { DangerZone } from '@/components/admin/server/DangerZone'
 
 export function AdminServerPage() {
   const { data: info } = useQuery({ queryKey: ['server-info'], queryFn: serverApi.info, staleTime: Infinity })
@@ -34,6 +35,7 @@ export function AdminServerPage() {
           <ScheduledTasksPanel />
           <SessionsPanel />
         </div>
+        <DangerZone />
       </div>
     </div>
   )

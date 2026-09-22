@@ -1,7 +1,19 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowSquareOut, BookOpen, Checks, CircleNotch, DotsThreeVertical, Plus } from '@phosphor-icons/react'
+import {
+  ArrowSquareOut,
+  ArrowsClockwise,
+  BookOpen,
+  Checks,
+  CircleNotch,
+  DotsThreeVertical,
+  FileMagnifyingGlass,
+  ImageSquare,
+  PencilSimple,
+  Plus,
+  Trash,
+} from '@phosphor-icons/react'
 import { seriesApi } from '@/lib/api/series'
 import { librariesApi } from '@/lib/api/libraries'
 import { canDownload, isAdmin, useAuthStore } from '@/lib/store/auth'
@@ -13,7 +25,7 @@ import { Button } from '@/components/ui/Button'
 import { Chip } from '@/components/ui/Chip'
 import { IconButton } from '@/components/ui/IconButton'
 import { BackButton } from '@/components/ui/BackButton'
-import { Menu, MenuItem } from '@/components/ui/Menu'
+import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { GridSkeleton } from '@/components/ui/Skeleton'
 import { CoverImage } from '@/components/media/CoverImage'
@@ -27,6 +39,10 @@ import { DetailError } from '@/components/detail/DetailError'
 import { Summary } from '@/components/detail/Summary'
 import { DownloadLink } from '@/components/detail/DownloadLink'
 import { NewCollectionDialog } from '@/components/detail/NewCollectionDialog'
+import { ConfirmDeleteDialog } from '@/components/detail/ConfirmDeleteDialog'
+import { EditSeriesDialog } from '@/components/metadata/EditSeriesDialog'
+import { PosterManager } from '@/components/metadata/PosterManager'
+import { ReaderToast, type Toast } from '@/components/reader/ReaderToast'
 import { ReadStatusFilterControl, type ReadStatusFilter } from '@/components/detail/ReadStatusFilter'
 import { useSentinel } from '@/components/detail/useSentinel'
 
@@ -40,6 +56,18 @@ export function SeriesDetailPage() {
   const bust = useBust(seriesId)
   const [readStatus, setReadStatus] = useState<ReadStatusFilter>('ALL')
   const [newCollectionOpen, setNewCollectionOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [postersOpen, setPostersOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [toast, setToast] = useState<Toast | null>(null)
+  const toastTimer = useRef<number | undefined>(undefined)
+  const toastId = useRef(0)
+  const showToast = useCallback((message: string) => {
+    window.clearTimeout(toastTimer.current)
+    setToast({ id: ++toastId.current, message })
+    toastTimer.current = window.setTimeout(() => setToast(null), 3000)
+  }, [])
+  useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
   const seriesQuery = useQuery({ queryKey: ['series', seriesId], queryFn: () => seriesApi.get(seriesId) })
   const series = seriesQuery.data
@@ -48,7 +76,7 @@ export function SeriesDetailPage() {
   const collectionsQuery = useQuery({
     queryKey: ['collections', 'series', seriesId],
     queryFn: () => seriesApi.collections(seriesId),
-    enabled: !!series,
+    enabled: !!series && !series.oneshot,
   })
   // First unread (or in-progress) book, falling back to the first book when fully read
   const readTargetQuery = useQuery({
@@ -59,7 +87,7 @@ export function SeriesDetailPage() {
       const first = await seriesApi.books(seriesId, { size: 1 })
       return first.content[0] ?? null
     },
-    enabled: !!series,
+    enabled: !!series && !series.oneshot,
   })
   const booksQuery = useInfiniteQuery({
     queryKey: ['series', seriesId, 'books', readStatus],
@@ -71,7 +99,7 @@ export function SeriesDetailPage() {
       }),
     initialPageParam: 0,
     getNextPageParam: (last) => (last.last ? undefined : last.number + 1),
-    enabled: !!series,
+    enabled: !!series && !series.oneshot,
   })
 
   const markMutation = useMutation({
@@ -82,6 +110,27 @@ export function SeriesDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
       queryClient.invalidateQueries({ queryKey: ['readlists'] })
     },
+  })
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => seriesApi.analyze(seriesId),
+    onSuccess: () => showToast('Analysis queued'),
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not queue the analysis'),
+  })
+  const refreshMutation = useMutation({
+    mutationFn: () => seriesApi.refreshMetadata(seriesId),
+    onSuccess: () => showToast('Metadata refresh queued'),
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not queue the refresh'),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: () => seriesApi.deleteFile(seriesId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['series'] })
+      queryClient.invalidateQueries({ queryKey: ['books'] })
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      navigate('/series')
+    },
+    onError: (e) => showToast(e instanceof Error ? e.message : 'Could not delete the files'),
   })
 
   const title = series ? series.metadata.title || series.name : ''
@@ -100,6 +149,7 @@ export function SeriesDetailPage() {
   if (seriesQuery.error)
     return <DetailError error={seriesQuery.error} notFoundTitle="Series not found" onRetry={() => seriesQuery.refetch()} />
   if (!series) return null
+  if (series.oneshot) return <Navigate to={`/oneshot/${series.id}`} replace />
 
   const md = series.metadata
   const library = librariesQuery.data?.find((l) => l.id === series.libraryId)
@@ -163,8 +213,26 @@ export function SeriesDetailPage() {
                   </IconButton>
                 }
               >
+                <MenuItem onSelect={() => setEditOpen(true)}>
+                  <PencilSimple className="size-4" /> Edit metadata
+                </MenuItem>
+                <MenuItem onSelect={() => setPostersOpen(true)}>
+                  <ImageSquare className="size-4" /> Manage posters
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem onSelect={() => analyzeMutation.mutate()} disabled={analyzeMutation.isPending}>
+                  <FileMagnifyingGlass className="size-4" /> Analyze
+                </MenuItem>
+                <MenuItem onSelect={() => refreshMutation.mutate()} disabled={refreshMutation.isPending}>
+                  <ArrowsClockwise className="size-4" /> Refresh metadata
+                </MenuItem>
+                <MenuSeparator />
                 <MenuItem onSelect={() => setNewCollectionOpen(true)}>
                   <Plus className="size-4" /> New collection with this series
+                </MenuItem>
+                <MenuSeparator />
+                <MenuItem danger onSelect={() => setDeleteOpen(true)}>
+                  <Trash className="size-4" /> Delete file
                 </MenuItem>
               </Menu>
             )}
@@ -221,8 +289,8 @@ export function SeriesDetailPage() {
 
       <section className="mt-10">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-display text-xl font-semibold text-ink">{series.oneshot ? 'The book' : 'Books'}</h2>
-          {!series.oneshot && <ReadStatusFilterControl value={readStatus} onChange={setReadStatus} />}
+          <h2 className="font-display text-xl font-semibold text-ink">Books</h2>
+          <ReadStatusFilterControl value={readStatus} onChange={setReadStatus} />
         </div>
         {booksQuery.isPending ? (
           <GridSkeleton count={6} />
@@ -241,8 +309,6 @@ export function SeriesDetailPage() {
             title="No books"
             body={readStatus === 'ALL' ? 'This series has no books.' : 'No books match this filter.'}
           />
-        ) : series.oneshot ? (
-          <BookCard book={books[0]} eager className="w-40" />
         ) : (
           <MediaGrid>
             {books.map((b) => (
@@ -267,6 +333,17 @@ export function SeriesDetailPage() {
       )}
 
       <NewCollectionDialog open={newCollectionOpen} onOpenChange={setNewCollectionOpen} seriesId={series.id} />
+      <EditSeriesDialog open={editOpen} onClose={() => setEditOpen(false)} seriesIds={[series.id]} />
+      <PosterManager open={postersOpen} onClose={() => setPostersOpen(false)} kind="series" entityId={series.id} title={title} />
+      <ConfirmDeleteDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Delete series files"
+        name={`all files of ${title}`}
+        loading={deleteMutation.isPending}
+        onConfirm={() => deleteMutation.mutate()}
+      />
+      <ReaderToast toast={toast} />
     </div>
   )
 }
