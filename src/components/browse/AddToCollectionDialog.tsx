@@ -1,0 +1,142 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Plus } from '@phosphor-icons/react'
+import { collectionsApi } from '@/lib/api/collections'
+import { plural } from '@/lib/utils/format'
+import { Dialog } from '@/components/ui/Dialog'
+import { TextField } from '@/components/ui/TextField'
+import { Button } from '@/components/ui/Button'
+import { Skeleton } from '@/components/ui/Skeleton'
+
+interface AddToCollectionDialogProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  seriesIds: string[]
+  /** reports the outcome so the caller's selection bar can show it */
+  onDone: (ok: boolean, message: string) => void
+}
+
+export function AddToCollectionDialog({ open, onOpenChange, seriesIds, onDone }: AddToCollectionDialogProps) {
+  const queryClient = useQueryClient()
+  const [filter, setFilter] = useState('')
+  const [newName, setNewName] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setFilter('')
+      setNewName('')
+    }
+  }, [open])
+
+  const listQuery = useQuery({
+    queryKey: ['collections', 'all'],
+    queryFn: () => collectionsApi.list({ size: 100 }),
+    enabled: open,
+  })
+
+  const finish = (ok: boolean, message: string) => {
+    onOpenChange(false)
+    onDone(ok, message)
+  }
+
+  const addMutation = useMutation({
+    mutationFn: async (collectionId: string) => {
+      // merge against a fresh read; the list payload may be stale while the dialog was open
+      const current = await collectionsApi.get(collectionId)
+      const merged = [...new Set([...current.seriesIds, ...seriesIds])]
+      await collectionsApi.update(collectionId, { seriesIds: merged })
+      return current.name
+    },
+    onSuccess: (name) => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] })
+      finish(true, `Added to "${name}"`)
+    },
+    onError: (e) => finish(false, e instanceof Error ? e.message : 'Could not add to collection'),
+  })
+
+  const createMutation = useMutation({
+    mutationFn: () => collectionsApi.create({ name: newName.trim(), ordered: false, seriesIds }),
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ['collections'] })
+      finish(true, `Created "${created.name}"`)
+    },
+    onError: (e) => finish(false, e instanceof Error ? e.message : 'Could not create collection'),
+  })
+
+  const collections = useMemo(() => listQuery.data?.content ?? [], [listQuery.data])
+  const visible = useMemo(() => {
+    const f = filter.trim().toLowerCase()
+    return f ? collections.filter((c) => c.name.toLowerCase().includes(f)) : collections
+  }, [collections, filter])
+  const pending = addMutation.isPending || createMutation.isPending
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange} title={`Add ${plural(seriesIds.length, 'series', 'series')} to collection`} size="sm">
+      <div className="px-5 pt-4">
+        <input
+          type="search"
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter collections…"
+          className="h-9 w-full rounded-lg border border-line bg-surface px-3 text-sm text-ink transition-colors placeholder:text-ink-3 focus:border-accent/70 focus:outline-none"
+        />
+      </div>
+      <div className="max-h-64 overflow-y-auto py-2">
+        {listQuery.isPending ? (
+          <div className="space-y-3 px-5 py-2">
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-2/3" />
+          </div>
+        ) : listQuery.isError ? (
+          <p className="px-5 py-3 text-sm text-ink-3">
+            Couldn't load collections.{' '}
+            <button type="button" onClick={() => listQuery.refetch()} className="cursor-pointer text-accent-strong hover:underline">
+              Retry
+            </button>
+          </p>
+        ) : visible.length === 0 ? (
+          <p className="px-5 py-3 text-sm text-ink-3">
+            {collections.length === 0 ? 'No collections yet' : 'No matching collections'}
+          </p>
+        ) : (
+          visible.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              disabled={pending}
+              onClick={() => addMutation.mutate(c.id)}
+              className="flex w-full cursor-pointer items-center justify-between gap-3 px-5 py-2 text-left transition-colors hover:bg-raised disabled:pointer-events-none disabled:opacity-50"
+            >
+              <span className="min-w-0">
+                <span className="block truncate text-sm text-ink">{c.name}</span>
+                <span className="block text-xs text-ink-3">{plural(c.seriesIds.length, 'series', 'series')}</span>
+              </span>
+              <Plus className="size-4 shrink-0 text-ink-3" />
+            </button>
+          ))
+        )}
+      </div>
+      <div className="border-t border-line px-5 py-4">
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (newName.trim()) createMutation.mutate()
+          }}
+          className="flex items-end gap-2"
+        >
+          <TextField
+            label="New collection"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Name"
+            className="flex-1"
+          />
+          <Button type="submit" variant="primary" loading={createMutation.isPending} disabled={!newName.trim() || pending}>
+            Create
+          </Button>
+        </form>
+      </div>
+    </Dialog>
+  )
+}

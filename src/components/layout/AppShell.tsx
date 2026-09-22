@@ -20,6 +20,7 @@ import {
   Moon,
   Palette,
   Playlist,
+  PushPin,
   Rocket,
   SignOut,
   Sun,
@@ -37,11 +38,13 @@ import { serverApi } from '@/lib/api/users'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { useUiStore } from '@/lib/store/ui'
 import { useLibraryPrefs } from '@/lib/store/libraryPrefs'
+import { usePinnedLibraries } from '@/lib/store/clientSettings'
 import { queryClient } from '@/lib/queryClient'
 import { LogoMark } from '@/components/LogoMark'
 import { IconButton } from '@/components/ui/IconButton'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/Menu'
 import { Skeleton } from '@/components/ui/Skeleton'
+import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
 
 function NavItem({
   to,
@@ -49,12 +52,14 @@ function NavItem({
   children,
   end,
   onClick,
+  trailing,
 }: {
   to: string
   icon: React.ReactNode
   children: React.ReactNode
   end?: boolean
   onClick?: () => void
+  trailing?: React.ReactNode
 }) {
   return (
     <NavLink
@@ -69,7 +74,8 @@ function NavItem({
       }
     >
       <span className="[&_svg]:size-[18px]">{icon}</span>
-      <span className="truncate">{children}</span>
+      <span className="min-w-0 flex-1 truncate">{children}</span>
+      {trailing}
     </NavLink>
   )
 }
@@ -78,6 +84,12 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const { data: libraries, isLoading } = useQuery({ queryKey: ['libraries'], queryFn: librariesApi.list })
   const preferredTab = useLibraryPrefs((s) => s.tab)
   const user = useAuthStore((s) => s.user)
+  const { pinned } = usePinnedLibraries()
+  const [pinDialogOpen, setPinDialogOpen] = useState(false)
+
+  const pinnedIndex = new Map((pinned ?? []).map((id, i) => [id, i]))
+  const pinRank = (id: string) => pinnedIndex.get(id) ?? Number.MAX_SAFE_INTEGER
+  const sortedLibraries = libraries?.slice().sort((a, b) => pinRank(a.id) - pinRank(b.id))
 
   return (
     <div className="flex h-full flex-col">
@@ -94,8 +106,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           Search
         </NavItem>
 
-        <div className="mt-5 mb-1.5 px-3 text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">
-          Libraries
+        <div className="mt-5 mb-1.5 flex items-center justify-between px-3">
+          <span className="text-[11px] font-medium tracking-[0.08em] text-ink-3 uppercase">Libraries</span>
+          {libraries && libraries.length > 0 && (
+            <IconButton
+              label="Manage pinned libraries"
+              className="-my-1 size-6 rounded-md [&_svg]:size-3.5"
+              onClick={() => setPinDialogOpen(true)}
+            >
+              <PushPin />
+            </IconButton>
+          )}
         </div>
         {isLoading && (
           <div className="flex flex-col gap-2 px-3">
@@ -103,12 +124,17 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             <Skeleton className="h-6 w-1/2" />
           </div>
         )}
-        {libraries?.map((lib) => (
+        {sortedLibraries?.map((lib) => (
           <NavItem
             key={lib.id}
             to={`/libraries/${lib.id}/${preferredTab[lib.id] ?? 'series'}`}
             icon={<BookBookmark />}
             onClick={onNavigate}
+            trailing={
+              pinnedIndex.has(lib.id) ? (
+                <PushPin weight="fill" className="size-3 shrink-0 text-ink-3" aria-label="Pinned" />
+              ) : undefined
+            }
           >
             {lib.name}
           </NavItem>
@@ -180,6 +206,7 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
 
+      <PinLibrariesDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
       <SidebarFooter />
     </div>
   )

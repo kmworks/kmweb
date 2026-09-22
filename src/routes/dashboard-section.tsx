@@ -1,8 +1,9 @@
-import { Fragment, useEffect } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Navigate, useParams } from 'react-router-dom'
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { Books, WarningCircle } from '@phosphor-icons/react'
 import { plural } from '@/lib/utils/format'
+import { usePinnedLibraries } from '@/lib/store/clientSettings'
 import { BackButton } from '@/components/ui/BackButton'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -11,6 +12,9 @@ import { GridSkeleton } from '@/components/ui/Skeleton'
 import { MediaGrid } from '@/components/media/MediaGrid'
 import { Sentinel } from '@/components/filters/Sentinel'
 import { DASHBOARD_SECTIONS, type DashboardSectionKey } from '@/components/dashboard/sections'
+import { dashboardLibraryIds, dashboardScope } from '@/components/dashboard/sectionConfig'
+import { PinnedLibrariesEmpty } from '@/components/dashboard/PinnedLibrariesEmpty'
+import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
 
 export function DashboardSectionPage() {
   const { libraryId, sectionKey = '' } = useParams()
@@ -19,17 +23,23 @@ export function DashboardSectionPage() {
     : undefined
   const homeTo = libraryId ? `/libraries/${libraryId}/recommended` : '/dashboard'
 
+  const { pinned } = usePinnedLibraries()
+  const libraryIds = dashboardLibraryIds(libraryId, pinned)
+  const scope = dashboardScope(libraryId, pinned)
+  const pinnedEmpty = !libraryId && pinned !== undefined && pinned.length === 0
+  const [pinDialogOpen, setPinDialogOpen] = useState(false)
+
   useEffect(() => {
     document.title = section ? `${section.title} · KMReader` : 'KMReader'
   }, [section])
 
   // same key+queryFn as the dashboard row, so the first pages come straight from cache
   const query = useInfiniteQuery({
-    enabled: !!section,
-    queryKey: ['dashboard', sectionKey, libraryId ?? 'all'],
+    enabled: !!section && !pinnedEmpty,
+    queryKey: ['dashboard', sectionKey, scope],
     queryFn: ({ pageParam }) => {
       if (!section) throw new Error(`unknown dashboard section: ${sectionKey}`)
-      return section.fetchPage(libraryId, pageParam)
+      return section.fetchPage(libraryIds, pageParam)
     },
     getNextPageParam: (last) => (last.last ? undefined : last.number + 1),
     initialPageParam: 0,
@@ -47,7 +57,9 @@ export function DashboardSectionPage() {
         title={section.title}
         subtitle={total != null ? (section.kind === 'book' ? plural(total, 'book') : plural(total, 'series', 'series')) : undefined}
       />
-      {query.isPending ? (
+      {pinnedEmpty ? (
+        <PinnedLibrariesEmpty onManage={() => setPinDialogOpen(true)} />
+      ) : query.isPending ? (
         <GridSkeleton count={18} />
       ) : query.isError ? (
         <EmptyState
@@ -73,6 +85,7 @@ export function DashboardSectionPage() {
           />
         </>
       )}
+      <PinLibrariesDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
     </div>
   )
 }

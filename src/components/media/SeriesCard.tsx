@@ -5,6 +5,8 @@ import { useUiStore } from '@/lib/store/ui'
 import { CoverImage } from './CoverImage'
 import { CardFrame, CardText, CardOverlayText } from './CardFrame'
 import { ProgressCapsule, UnreadBadge } from './badges'
+import { SelectBadge } from '@/components/selection/SelectBadge'
+import type { CardSelection } from '@/components/selection/useSelection'
 import { cn } from '@/lib/utils/cn'
 
 function secondaryLine(series: SeriesDto): string {
@@ -16,20 +18,30 @@ function secondaryLine(series: SeriesDto): string {
   return `${booksCount} books`
 }
 
-export function SeriesCard({ series, className, eager }: { series: SeriesDto; className?: string; eager?: boolean }) {
+interface SeriesCardProps {
+  series: SeriesDto
+  className?: string
+  eager?: boolean
+  /** when set, the card shows a selection checkbox and toggles instead of navigating in selection mode */
+  selection?: CardSelection
+}
+
+export function SeriesCard({ series, className, eager, selection }: SeriesCardProps) {
   const bust = useBust(series.id)
   const blurUnread = useUiStore((s) => s.blurUnreadCovers)
   const title = series.metadata.title || series.name
 
-  return (
-    <CardFrame to={`/series/${series.id}`} label={title} className={className}>
+  const frame = (
+    <CardFrame to={`/series/${series.id}`} label={title} className={selection ? undefined : className}>
       <div className="relative">
         <CoverImage
           src={urls.seriesThumbnail(series.id, bust || undefined)}
           alt={title}
           eager={eager}
           blurred={blurUnread && series.booksUnreadCount > 0}
+          className={cn(selection?.selected && 'ring-2 ring-accent')}
         />
+        {selection && <SelectBadge {...selection} label={title} />}
         <UnreadBadge count={series.booksUnreadCount} />
         <ProgressCapsule
           value={series.booksCount > 0 && series.booksInProgressCount > 0 ? series.booksReadCount / series.booksCount : 0}
@@ -38,6 +50,22 @@ export function SeriesCard({ series, className, eager }: { series: SeriesDto; cl
       </div>
       <CardText title={title} secondary={secondaryLine(series)} />
     </CardFrame>
+  )
+
+  if (!selection) return frame
+  // in selection mode the whole card toggles; capture phase so both the badge and the Link see one click
+  return (
+    <div
+      className={cn('rounded-lg', className)}
+      onClickCapture={(e) => {
+        if (!selection.active) return
+        e.preventDefault()
+        e.stopPropagation()
+        selection.onToggle()
+      }}
+    >
+      {frame}
+    </div>
   )
 }
 

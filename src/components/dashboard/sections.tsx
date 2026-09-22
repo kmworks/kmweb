@@ -12,21 +12,22 @@ const PAGE_SIZE = 20
 export interface DashboardSectionDef {
   title: string
   kind: 'book' | 'series'
-  fetchPage: (libraryId: string | undefined, page: number) => Promise<Page<BookDto | SeriesDto>>
+  /** libraryIds undefined aggregates every library; callers must not pass an empty array */
+  fetchPage: (libraryIds: string[] | undefined, page: number) => Promise<Page<BookDto | SeriesDto>>
   renderRow: (item: BookDto | SeriesDto) => ReactNode
   renderGrid: (item: BookDto | SeriesDto) => ReactNode
 }
 
 interface BookSectionDef {
   title: string
-  fetchPage: (libraryId: string | undefined, page: number) => Promise<Page<BookDto>>
+  fetchPage: (libraryIds: string[] | undefined, page: number) => Promise<Page<BookDto>>
   renderRow: (book: BookDto) => ReactNode
   renderGrid: (book: BookDto) => ReactNode
 }
 
 interface SeriesSectionDef {
   title: string
-  fetchPage: (libraryId: string | undefined, page: number) => Promise<Page<SeriesDto>>
+  fetchPage: (libraryIds: string[] | undefined, page: number) => Promise<Page<SeriesDto>>
   renderRow: (series: SeriesDto) => ReactNode
   renderGrid: (series: SeriesDto) => ReactNode
 }
@@ -35,8 +36,10 @@ interface SeriesSectionDef {
 const bookSection = (def: BookSectionDef): DashboardSectionDef => ({ kind: 'book', ...def }) as DashboardSectionDef
 const seriesSection = (def: SeriesSectionDef): DashboardSectionDef => ({ kind: 'series', ...def }) as DashboardSectionDef
 
-function libraryConditions(libraryId: string | undefined): SearchCondition[] {
-  return libraryId ? [{ libraryId: { operator: 'is', value: libraryId } }] : []
+function libraryConditions(libraryIds: string[] | undefined): SearchCondition[] {
+  if (!libraryIds || libraryIds.length === 0) return []
+  if (libraryIds.length === 1) return [{ libraryId: { operator: 'is', value: libraryIds[0] } }]
+  return [{ anyOf: libraryIds.map((id) => ({ libraryId: { operator: 'is', value: id } }) as SearchCondition) }]
 }
 
 const bookRow = (b: BookDto) => <BookCard book={b} showSeries className={dashboardCardWidth} />
@@ -47,11 +50,11 @@ const seriesGrid = (s: SeriesDto) => <SeriesCard series={s} />
 export const DASHBOARD_SECTIONS = {
   'keep-reading': bookSection({
     title: 'Keep Reading',
-    fetchPage: (libraryId, page) =>
+    fetchPage: (libraryIds, page) =>
       booksApi.list({
         search: {
           condition: {
-            allOf: [{ readStatus: { operator: 'is', value: 'IN_PROGRESS' } }, ...libraryConditions(libraryId)],
+            allOf: [{ readStatus: { operator: 'is', value: 'IN_PROGRESS' } }, ...libraryConditions(libraryIds)],
           },
         },
         page,
@@ -63,16 +66,16 @@ export const DASHBOARD_SECTIONS = {
   }),
   'on-deck': bookSection({
     title: 'On Deck',
-    fetchPage: (libraryId, page) =>
-      booksApi.ondeck({ libraryId: libraryId ? [libraryId] : undefined, page, size: PAGE_SIZE }),
+    fetchPage: (libraryIds, page) =>
+      booksApi.ondeck({ libraryId: libraryIds, page, size: PAGE_SIZE }),
     renderRow: bookRow,
     renderGrid: bookGrid,
   }),
   'recently-released-books': bookSection({
     title: 'Recently Released Books',
-    fetchPage: (libraryId, page) =>
+    fetchPage: (libraryIds, page) =>
       booksApi.list({
-        search: { condition: { allOf: [{ releaseDate: { operator: 'isNotNull' } }, ...libraryConditions(libraryId)] } },
+        search: { condition: { allOf: [{ releaseDate: { operator: 'isNotNull' } }, ...libraryConditions(libraryIds)] } },
         page,
         size: PAGE_SIZE,
         sort: ['metadata.releaseDate,desc'],
@@ -82,10 +85,10 @@ export const DASHBOARD_SECTIONS = {
   }),
   'recently-added-books': bookSection({
     title: 'Recently Added Books',
-    fetchPage: (libraryId, page) =>
-      libraryId
+    fetchPage: (libraryIds, page) =>
+      libraryIds?.length
         ? booksApi.list({
-            search: { condition: { allOf: libraryConditions(libraryId) } },
+            search: { condition: { allOf: libraryConditions(libraryIds) } },
             page,
             size: PAGE_SIZE,
             sort: ['createdDate,desc'],
@@ -96,29 +99,30 @@ export const DASHBOARD_SECTIONS = {
   }),
   'recently-added-series': seriesSection({
     title: 'Recently Added Series',
-    fetchPage: (libraryId, page) =>
-      seriesApi.new({ libraryId: libraryId ? [libraryId] : undefined, page, size: PAGE_SIZE }),
+    fetchPage: (libraryIds, page) =>
+      seriesApi.new({ libraryId: libraryIds, page, size: PAGE_SIZE }),
     renderRow: seriesRow,
     renderGrid: seriesGrid,
   }),
   'recently-updated-series': seriesSection({
     title: 'Recently Updated Series',
-    fetchPage: (libraryId, page) =>
-      seriesApi.updated({ libraryId: libraryId ? [libraryId] : undefined, page, size: PAGE_SIZE }),
+    fetchPage: (libraryIds, page) =>
+      seriesApi.updated({ libraryId: libraryIds, page, size: PAGE_SIZE }),
     renderRow: seriesRow,
     renderGrid: seriesGrid,
   }),
   'recently-read': seriesSection({
     title: 'Recently Read',
-    fetchPage: (libraryId, page) => {
+    fetchPage: (libraryIds, page) => {
       const readCondition: SearchCondition = {
         anyOf: [
           { readStatus: { operator: 'is', value: 'READ' } },
           { readStatus: { operator: 'is', value: 'IN_PROGRESS' } },
         ],
       }
+      const conditions = libraryConditions(libraryIds)
       return seriesApi.list({
-        search: { condition: libraryId ? { allOf: [readCondition, ...libraryConditions(libraryId)] } : readCondition },
+        search: { condition: conditions.length ? { allOf: [readCondition, ...conditions] } : readCondition },
         page,
         size: PAGE_SIZE,
         sort: ['readDate,desc'],

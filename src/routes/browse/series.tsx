@@ -4,6 +4,7 @@ import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-qu
 import { Books, WarningCircle } from '@phosphor-icons/react'
 import { librariesApi } from '@/lib/api/libraries'
 import { seriesApi } from '@/lib/api/series'
+import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { PageHeader } from '@/components/ui/PageHeader'
@@ -17,6 +18,9 @@ import { activeFilterCount, serializeFilters, useBrowseFilters } from '@/compone
 import { serializeSort, useSortState } from '@/components/filters/sort'
 import { buildSeriesSearch } from '@/components/filters/builders'
 import { SERIES_DEFAULT_SORT, SERIES_FILTER_GROUPS, SERIES_SORT_OPTIONS } from '@/components/filters/types'
+import { cardSelection, useSelection } from '@/components/selection/useSelection'
+import { AlphabetBar } from '@/components/browse/AlphabetBar'
+import { SeriesSelectionBar } from '@/components/browse/SeriesSelectionBar'
 
 export function BrowseSeriesPage() {
   const { libraryId } = useParams()
@@ -31,12 +35,28 @@ export function BrowseSeriesPage() {
   const filters = useBrowseFilters()
   const sort = useSortState(`series:${libraryId ?? 'all'}`, SERIES_DEFAULT_SORT)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const admin = isAdmin(useAuthStore((s) => s.user))
+  const groups = useMemo(() => SERIES_FILTER_GROUPS.filter((g) => !g.adminOnly || admin), [admin])
+  const selection = useSelection()
 
   const search = useMemo(() => buildSeriesSearch(filters.state, libraryId), [filters.state, libraryId])
   const sortParam = serializeSort(sort.current)
+  const filterKey = serializeFilters(filters.state)
+
+  // the letter filter must not collapse the alphabet bar itself, so groups are counted without it
+  const alphaSearch = useMemo(
+    () => buildSeriesSearch({ ...filters.state, letter: [] }, libraryId),
+    [filters.state, libraryId],
+  )
+  const alphaKey = serializeFilters({ ...filters.state, letter: [] })
+  const alphaQuery = useQuery({
+    queryKey: ['series', 'alphabet', libraryId ?? 'all', alphaKey],
+    queryFn: () => seriesApi.alphabeticalGroups(alphaSearch),
+    placeholderData: keepPreviousData,
+  })
 
   const q = useInfiniteQuery({
-    queryKey: ['series', 'list', libraryId ?? 'all', serializeFilters(filters.state), sortParam],
+    queryKey: ['series', 'list', libraryId ?? 'all', filterKey, sortParam],
     queryFn: ({ pageParam }) => seriesApi.list({ search, page: pageParam, size: 50, sort: [sortParam] }),
     getNextPageParam: (last) => (last.last ? undefined : last.number + 1),
     initialPageParam: 0,
@@ -51,13 +71,19 @@ export function BrowseSeriesPage() {
     if (hasNextPage && !isFetchingNextPage && !isPlaceholderData) void fetchNextPage()
   }, [hasNextPage, isFetchingNextPage, isPlaceholderData, fetchNextPage])
 
+  // a changed result set invalidates any selection made against the old one
+  const clearSelection = selection.clear
+  useEffect(() => {
+    clearSelection()
+  }, [filterKey, sortParam, libraryId, clearSelection])
+
   return (
     <div>
       <PageHeader title={title} />
       <FilterBar
         count={total}
         noun="series"
-        groups={SERIES_FILTER_GROUPS}
+        groups={groups}
         state={filters.state}
         activeCount={activeFilterCount(filters.state)}
         onToggleValue={filters.toggleValue}
@@ -67,6 +93,11 @@ export function BrowseSeriesPage() {
         sortOptions={SERIES_SORT_OPTIONS}
         sort={sort.current}
         onSortChange={sort.set}
+      />
+      <AlphabetBar
+        groups={alphaQuery.data}
+        active={filters.state.letter[0]}
+        onSelect={(l) => filters.setExclusive('letter', l)}
       />
       {q.isPending ? (
         <GridSkeleton count={18} />
@@ -83,7 +114,7 @@ export function BrowseSeriesPage() {
         <>
           <MediaGrid>
             {items.map((s) => (
-              <SeriesCard key={s.id} series={s} />
+              <SeriesCard key={s.id} series={s} selection={cardSelection(selection, s.id)} />
             ))}
           </MediaGrid>
           {isFetchingNextPage && (
@@ -99,15 +130,18 @@ export function BrowseSeriesPage() {
       <FilterDrawer
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        groups={SERIES_FILTER_GROUPS}
+        groups={groups}
         state={filters.state}
         libraryId={libraryId}
         activeCount={activeFilterCount(filters.state)}
         onToggleValue={filters.toggleValue}
         onToggleAuthor={filters.toggleAuthor}
         onSetMode={filters.setMode}
+        onSetNegated={filters.setNegated}
+        onSetExclusive={filters.setExclusive}
         onClearAll={filters.clearAll}
       />
+      <SeriesSelectionBar selection={selection} loadedIds={items.map((s) => s.id)} />
     </div>
   )
 }

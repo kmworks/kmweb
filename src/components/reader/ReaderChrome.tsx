@@ -2,12 +2,16 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import {
   ArrowUUpLeft,
   ArrowUUpRight,
+  Book,
   BookOpen,
+  Books,
   CornersIn,
   CornersOut,
   DotsThreeVertical,
   Download,
   EyeSlash,
+  FileImage,
+  ListBullets,
   Question,
   SkipBack,
   SkipForward,
@@ -16,9 +20,11 @@ import {
   X,
 } from '@phosphor-icons/react'
 import { IconButton } from '@/components/ui/IconButton'
-import { Menu, MenuItem } from '@/components/ui/Menu'
+import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/Menu'
 import { Slider } from '@/components/ui/Slider'
 import { Tooltip } from '@/components/ui/Tooltip'
+
+export type PosterTarget = 'book' | 'series' | 'readlist'
 
 interface ReaderChromeProps {
   visible: boolean
@@ -29,6 +35,9 @@ interface ReaderChromeProps {
   incognito: boolean
   isFullscreen: boolean
   canDownloadFile: boolean
+  canSetPoster: boolean
+  readListContext: boolean
+  posterBusy: boolean
   hasPreviousBook: boolean
   hasNextBook: boolean
   onClose: () => void
@@ -42,6 +51,8 @@ interface ReaderChromeProps {
   onToggleHelp: () => void
   onToggleFullscreen: () => void
   onDownload: () => void
+  onDownloadPage: () => void
+  onSetPoster: (target: PosterTarget) => void
   onGoToBook: () => void
 }
 
@@ -56,6 +67,9 @@ export function ReaderChrome({
   incognito,
   isFullscreen,
   canDownloadFile,
+  canSetPoster,
+  readListContext,
+  posterBusy,
   hasPreviousBook,
   hasNextBook,
   onClose,
@@ -69,6 +83,8 @@ export function ReaderChrome({
   onToggleHelp,
   onToggleFullscreen,
   onDownload,
+  onDownloadPage,
+  onSetPoster,
   onGoToBook,
 }: ReaderChromeProps) {
   const reduceMotion = useReducedMotion()
@@ -130,6 +146,29 @@ export function ReaderChrome({
                     <Download className="size-4" /> Download file
                   </MenuItem>
                 )}
+                {canDownloadFile && (
+                  <MenuItem onSelect={onDownloadPage}>
+                    <FileImage className="size-4" /> Download page {page}
+                  </MenuItem>
+                )}
+                {canSetPoster && (
+                  <>
+                    <MenuSeparator />
+                    <MenuLabel>Set page {page} as poster</MenuLabel>
+                    <MenuItem disabled={posterBusy} onSelect={() => onSetPoster('book')}>
+                      <Book className="size-4" /> Book poster
+                    </MenuItem>
+                    <MenuItem disabled={posterBusy} onSelect={() => onSetPoster('series')}>
+                      <Books className="size-4" /> Series poster
+                    </MenuItem>
+                    {readListContext && (
+                      <MenuItem disabled={posterBusy} onSelect={() => onSetPoster('readlist')}>
+                        <ListBullets className="size-4" /> Read list poster
+                      </MenuItem>
+                    )}
+                  </>
+                )}
+                <MenuSeparator />
                 <MenuItem onSelect={onGoToBook}>
                   <BookOpen className="size-4" /> Go to book page
                 </MenuItem>

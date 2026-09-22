@@ -60,4 +60,6 @@ export const seriesApi = {
   patchMetadata: (seriesId: string, body: SeriesMetadataUpdateDto) =>
     api.patch<void>(`/api/v1/series/${seriesId}/metadata`, body),
   deleteFile: (seriesId: string) => api.delete<void>(`/api/v1/series/${seriesId}/file`),
+  analyze: (seriesId: string) => api.post<void>(`/api/v1/series/${seriesId}/analyze`),
+  refreshMetadata: (seriesId: string) => api.post<void>(`/api/v1/series/${seriesId}/metadata/refresh`),
 }

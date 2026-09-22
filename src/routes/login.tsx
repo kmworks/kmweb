@@ -3,10 +3,13 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Eye, EyeSlash } from '@phosphor-icons/react'
 import { usersApi } from '@/lib/api/users'
+import { clientSettingsApi } from '@/lib/api/clientSettings'
 import { useAuthStore } from '@/lib/store/auth'
+import { cn } from '@/lib/utils/cn'
 import { LogoMark } from '@/components/LogoMark'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/TextField'
+import { HIDE_PASSWORD_KEY } from '@/routes/admin/ui'
 import type { UserDto } from '@/lib/api/types'
 
 const REMEMBER_KEY = 'kmweb.rememberMe'
@@ -26,7 +29,16 @@ export function LoginPage() {
 
   const { data: claim } = useQuery({ queryKey: ['claim'], queryFn: usersApi.claimStatus, retry: false })
   const { data: providers } = useQuery({ queryKey: ['oauth2-providers'], queryFn: usersApi.oauth2Providers, retry: false })
+  // anonymous callers only see settings flagged allowUnauthorized; on any failure
+  // data stays undefined and the password form shows, so admins can't lock themselves out
+  const { data: globalSettings } = useQuery({
+    queryKey: ['client-settings', 'global', 'public'],
+    queryFn: clientSettingsApi.listGlobal,
+    retry: false,
+  })
   const claimMode = claim != null && !claim.isClaimed
+  const hidePasswordForm =
+    !claimMode && (providers?.length ?? 0) > 0 && globalSettings?.[HIDE_PASSWORD_KEY]?.value === 'true'
 
   useEffect(() => {
     if (status === 'authenticated') navigate(params.get('redirect') || '/dashboard', { replace: true })
@@ -89,10 +101,15 @@ export function LoginPage() {
             {claimMode ? 'Claim this server' : 'Welcome back'}
           </h2>
           <p className="mt-2 text-sm text-ink-3">
-            {claimMode ? 'Create the administrator account to get started.' : 'Sign in with your account to continue.'}
+            {claimMode
+              ? 'Create the administrator account to get started.'
+              : hidePasswordForm
+                ? 'Sign in with your identity provider to continue.'
+                : 'Sign in with your account to continue.'}
           </p>
 
-          <form onSubmit={submit} className="mt-8 flex flex-col gap-5">
+          {!hidePasswordForm && (
+            <form onSubmit={submit} className="mt-8 flex flex-col gap-5">
             <TextField
               label="Email"
               type="email"
@@ -138,15 +155,18 @@ export function LoginPage() {
               {claimMode ? 'Create account' : 'Sign in'}
             </Button>
           </form>
+          )}
 
           {providers && providers.length > 0 && (
             <>
-              <div className="my-6 flex items-center gap-3 text-xs text-ink-3">
-                <div className="h-px flex-1 bg-line" />
-                or continue with
-                <div className="h-px flex-1 bg-line" />
-              </div>
-              <div className="flex flex-col gap-2">
+              {!hidePasswordForm && (
+                <div className="my-6 flex items-center gap-3 text-xs text-ink-3">
+                  <div className="h-px flex-1 bg-line" />
+                  or continue with
+                  <div className="h-px flex-1 bg-line" />
+                </div>
+              )}
+              <div className={cn('flex flex-col gap-2', hidePasswordForm && 'mt-8')}>
                 {providers.map((p) => (
                   <Button key={p.registrationId} onClick={() => (window.location.href = `/oauth2/authorization/${p.registrationId}`)}>
                     {p.name}

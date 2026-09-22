@@ -45,6 +45,8 @@ export const booksApi = {
   bulkPatchMetadata: (body: Record<string, BookMetadataUpdateDto>) =>
     api.patch<void>('/api/v1/books/metadata', body),
   deleteFile: (bookId: string) => api.delete<void>(`/api/v1/books/${bookId}/file`),
+  analyze: (bookId: string) => api.post<void>(`/api/v1/books/${bookId}/analyze`),
+  refreshMetadata: (bookId: string) => api.post<void>(`/api/v1/books/${bookId}/metadata/refresh`),
   duplicates: (params?: PageParams) => api.get<Page<BookDto>>('/api/v1/books/duplicates', pageQuery(params)),
   importBooks: (body: BookImportBatchDto) => api.post<void>('/api/v1/books/import', body),
 }

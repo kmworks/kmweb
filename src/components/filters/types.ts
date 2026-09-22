@@ -1,15 +1,21 @@
 export type GroupKey =
   | 'readStatus'
   | 'seriesStatus'
+  | 'complete'
+  | 'oneshot'
+  | 'deleted'
+  | 'letter'
   | 'publishers'
   | 'genres'
   | 'tags'
+  | 'sharingLabels'
   | 'ageRatings'
   | 'languages'
   | 'releaseYears'
   | 'authors'
   | 'mediaProfiles'
   | 'mediaStatuses'
+  | 'poster'
 
 /** How multiple values inside one group combine in the search DSL. */
 export type GroupMode = 'any' | 'all'
@@ -23,17 +29,25 @@ export interface FilterState {
   q: string
   readStatus: string[]
   seriesStatus: string[]
+  complete: string[]
+  oneshot: string[]
+  deleted: string[]
+  letter: string[]
   publishers: string[]
   genres: string[]
   tags: string[]
+  sharingLabels: string[]
   ageRatings: string[]
   languages: string[]
   releaseYears: string[]
   authors: AuthorFilter[]
   mediaProfiles: string[]
   mediaStatuses: string[]
+  poster: string[]
   /** groups combined with allOf instead of the default anyOf */
   matchAll: GroupKey[]
+  /** groups whose values are matched with isNot instead of is */
+  exclude: GroupKey[]
 }
 
 export type ReferentialKind =
@@ -41,6 +55,7 @@ export type ReferentialKind =
   | 'genres'
   | 'seriesTags'
   | 'bookTags'
+  | 'sharingLabels'
   | 'ageRatings'
   | 'languages'
   | 'releaseDates'
@@ -48,9 +63,13 @@ export type ReferentialKind =
 export interface FilterGroupDef {
   key: GroupKey
   label: string
-  kind: 'enum' | 'referential' | 'authors'
+  kind: 'enum' | 'referential' | 'authors' | 'letters'
   options?: { value: string; label: string }[]
   referential?: ReferentialKind
+  /** hidden from non-admin users */
+  adminOnly?: boolean
+  /** offers an is / is-not switch once values are selected */
+  negatable?: boolean
 }
 
 export interface SortOption {
@@ -69,8 +88,16 @@ const READ_STATUS_OPTIONS = [
   { value: 'IN_PROGRESS', label: 'In progress' },
 ]
 
+const YES_NO_OPTIONS = [
+  { value: 'true', label: 'Yes' },
+  { value: 'false', label: 'No' },
+]
+
+/** First-letter navigation values; '#' stands for titles not starting with a letter. */
+export const LETTERS = [...'ABCDEFGHIJKLMNOPQRSTUVWXYZ']
+
 export const SERIES_FILTER_GROUPS: FilterGroupDef[] = [
-  { key: 'readStatus', label: 'Read status', kind: 'enum', options: READ_STATUS_OPTIONS },
+  { key: 'readStatus', label: 'Read status', kind: 'enum', options: READ_STATUS_OPTIONS, negatable: true },
   {
     key: 'seriesStatus',
     label: 'Series status',
@@ -82,9 +109,14 @@ export const SERIES_FILTER_GROUPS: FilterGroupDef[] = [
       { value: 'HIATUS', label: 'Hiatus' },
     ],
   },
+  { key: 'letter', label: 'First letter', kind: 'letters' },
+  { key: 'complete', label: 'Complete', kind: 'enum', options: YES_NO_OPTIONS },
+  { key: 'oneshot', label: 'Oneshot', kind: 'enum', options: YES_NO_OPTIONS },
+  { key: 'deleted', label: 'Deleted', kind: 'enum', options: YES_NO_OPTIONS, adminOnly: true },
   { key: 'publishers', label: 'Publishers', kind: 'referential', referential: 'publishers' },
   { key: 'genres', label: 'Genres', kind: 'referential', referential: 'genres' },
   { key: 'tags', label: 'Tags', kind: 'referential', referential: 'seriesTags' },
+  { key: 'sharingLabels', label: 'Sharing labels', kind: 'referential', referential: 'sharingLabels' },
   { key: 'ageRatings', label: 'Age rating', kind: 'referential', referential: 'ageRatings' },
   { key: 'languages', label: 'Languages', kind: 'referential', referential: 'languages' },
   { key: 'releaseYears', label: 'Release years', kind: 'referential', referential: 'releaseDates' },
@@ -92,7 +124,7 @@ export const SERIES_FILTER_GROUPS: FilterGroupDef[] = [
 ]
 
 export const BOOK_FILTER_GROUPS: FilterGroupDef[] = [
-  { key: 'readStatus', label: 'Read status', kind: 'enum', options: READ_STATUS_OPTIONS },
+  { key: 'readStatus', label: 'Read status', kind: 'enum', options: READ_STATUS_OPTIONS, negatable: true },
   { key: 'tags', label: 'Tags', kind: 'referential', referential: 'bookTags' },
   {
     key: 'mediaProfiles',
@@ -114,6 +146,15 @@ export const BOOK_FILTER_GROUPS: FilterGroupDef[] = [
       { value: 'UNKNOWN', label: 'Unknown' },
       { value: 'UNSUPPORTED', label: 'Unsupported' },
       { value: 'OUTDATED', label: 'Outdated' },
+    ],
+  },
+  {
+    key: 'poster',
+    label: 'Poster',
+    kind: 'enum',
+    options: [
+      { value: 'selected', label: 'Has poster' },
+      { value: 'missing', label: 'No poster' },
     ],
   },
   { key: 'releaseYears', label: 'Release years', kind: 'referential', referential: 'releaseDates' },
@@ -139,6 +180,7 @@ export const BOOK_SORT_OPTIONS: SortOption[] = [
   { label: 'Date updated', property: 'lastModifiedDate' },
   { label: 'Release date', property: 'metadata.releaseDate' },
   { label: 'Last read', property: 'readProgress.readDate' },
+  { label: 'File name', property: 'url' },
   { label: 'File size', property: 'fileSize' },
   { label: 'Pages', property: 'media.pagesCount' },
 ]

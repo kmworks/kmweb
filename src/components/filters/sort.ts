@@ -24,7 +24,9 @@ export function sortLabel(options: SortOption[], property: string): string {
 
 /** name-like fields read naturally A to Z; everything else (dates, counts) newest/largest first */
 export function defaultDirection(property: string): 'asc' | 'desc' {
-  return property === 'metadata.titleSort' || property === 'name' || property === 'series' ? 'asc' : 'desc'
+  return property === 'metadata.titleSort' || property === 'name' || property === 'series' || property === 'url'
+    ? 'asc'
+    : 'desc'
 }
 
 export function useSortState(scope: string, fallback: SortState) {
