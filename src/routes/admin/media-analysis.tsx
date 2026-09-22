@@ -6,6 +6,7 @@ import { librariesApi } from '@/lib/api/libraries'
 import type { BookDto, BookSearch, MediaStatus, SearchCondition } from '@/lib/api/types'
 import { urls } from '@/lib/utils/urls'
 import { plural } from '@/lib/utils/format'
+import { convertErrorCodes } from '@/lib/utils/mediaStatus'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -68,7 +69,7 @@ function Row({ book, libraryName }: { book: BookDto; libraryName: string }) {
           <span className="text-ink-3"> · {book.metadata.title || book.name}</span>
         </p>
         <p className="mt-0.5 truncate text-xs text-ink-3" title={book.media.comment || undefined}>
-          {book.media.comment || 'No details reported'}
+          {book.media.comment ? convertErrorCodes(book.media.comment) : 'No details reported'}
         </p>
         {act.isError && (
           <p className="mt-0.5 text-xs text-danger">

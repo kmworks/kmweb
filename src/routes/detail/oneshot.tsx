@@ -9,6 +9,7 @@ import { canDownload, useAuthStore } from '@/lib/store/auth'
 import { useBust } from '@/lib/store/thumbnails'
 import { urls } from '@/lib/utils/urls'
 import { readRoute } from '@/lib/utils/nav'
+import { mediaIssue } from '@/lib/utils/mediaStatus'
 import { formatBytes, formatDate, readingDirectionLabel, relativeTime, seriesStatusLabel } from '@/lib/utils/format'
 import { cn } from '@/lib/utils/cn'
 import { Button } from '@/components/ui/Button'
@@ -101,6 +102,7 @@ export function OneshotDetailPage() {
   const progress = book.readProgress
   const completed = !!progress?.completed
   const route = readRoute(book)
+  const issue = mediaIssue(book)
   const readlists = readlistsQuery.data ?? []
   const cover = urls.bookThumbnail(book.id, bust || undefined)
   const authors = bookMd.authors.length > 0 ? bookMd.authors : series.booksMetadata.authors
@@ -148,7 +150,21 @@ export function OneshotDetailPage() {
             </Button>
             {canDownload(user) && <DownloadLink href={urls.bookFile(book.id)} />}
           </div>
-          {!route && <p className="mt-2 text-xs text-ink-3">EPUB books are not supported by the web reader yet</p>}
+          {issue && (
+            <p
+              className={cn(
+                'mt-2 text-xs',
+                issue.severity === 'danger'
+                  ? 'text-danger'
+                  : issue.severity === 'accent'
+                    ? 'text-accent-strong'
+                    : 'text-ink-3',
+              )}
+            >
+              {issue.title}
+              {issue.detail && `: ${issue.detail}`}
+            </p>
+          )}
         </div>
       </DetailHero>
 

@@ -20,6 +20,7 @@ import { needsConvert, supportedImageFormats } from '@/lib/utils/imageSupport'
 import { urls } from '@/lib/utils/urls'
 import type { PagedReaderLayout, SpreadPage } from '@/lib/utils/spreads'
 import { readingDirectionLabel } from '@/lib/utils/format'
+import { mediaIssue } from '@/lib/utils/mediaStatus'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ContinuousReader } from '@/components/reader/ContinuousReader'
@@ -393,25 +394,28 @@ function Reader({ bookId }: { bookId: string }) {
     )
   }
 
+  if (book) {
+    const issue = mediaIssue(book)
+    if (issue) {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-bg">
+          <EmptyState
+            icon={issue.severity === 'danger' ? <Warning weight="duotone" /> : <BookOpen weight="duotone" />}
+            title={issue.title}
+            body={issue.detail}
+            action={<Button onClick={() => navigate(`/book/${bookId}`)}>Back to book</Button>}
+          />
+        </div>
+      )
+    }
+  }
+
   if (pagesQuery.isError) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-bg">
         <EmptyState
           icon={<Warning weight="duotone" />}
           title="Failed to load pages"
-          action={<Button onClick={() => navigate(`/book/${bookId}`)}>Back to book</Button>}
-        />
-      </div>
-    )
-  }
-
-  if (book && book.media.mediaProfile === 'EPUB' && !book.media.epubDivinaCompatible) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-bg">
-        <EmptyState
-          icon={<BookOpen weight="duotone" />}
-          title="This book needs an EPUB reader"
-          body="The EPUB reader is not available yet."
           action={<Button onClick={() => navigate(`/book/${bookId}`)}>Back to book</Button>}
         />
       </div>
