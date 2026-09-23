@@ -141,7 +141,7 @@ export function LoginPage() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="size-4 cursor-pointer accent-[#ff9500]"
+                className="size-4 cursor-pointer accent-[#ff7a55]"
               />
               Keep me signed in
             </label>
