@@ -6,7 +6,7 @@
  * (bg-bg / bg-surface / text-ink / border-line / accent), never raw scales.
  *
  * Shape system: covers rounded-lg, panels rounded-xl, buttons/inputs rounded-lg,
- * chips and badges rounded-full. One accent (#ff9500) everywhere.
+ * chips and badges rounded-full. One accent (#ff7a55) everywhere.
  *
  * Z-index scale: 10 sticky bars · 20 drawers · 30 dropdown/popover ·
  * 40 dialog · 50 toast · reader UI lives in its own fixed stacking context.
@@ -22,14 +22,14 @@
   --ink: #f4f4f5;
   --ink-2: #a6a6ad;
   --ink-3: #6e6e76;
-  --accent: #ff9500;
+  --accent: #ff7a55;
   --accent-strong: #ffb340;
-  --accent-soft: rgb(255 149 0 / 0.14);
-  --accent-ink: #241500;
+  --accent-soft: rgb(255 122 85 / 0.14);
+  --accent-ink: #2a0e03;
   --danger: #ff5d5d;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.35), 0 6px 20px rgb(0 0 0 / 0.28);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 48px rgb(0 0 0 / 0.42);
-  --brand-gradient: linear-gradient(135deg, #ff9500 0%, #d97d00 100%);
+  --brand-gradient: linear-gradient(135deg, #ffb340 0%, #ff3d68 100%);
   color-scheme: dark;
 }
 
@@ -43,10 +43,10 @@
   --ink: #1c1c1e;
   --ink-2: #5c5c62;
   --ink-3: #8e8e93;
-  --accent: #ff9500;
-  --accent-strong: #d97d00;
-  --accent-soft: rgb(255 149 0 / 0.13);
-  --accent-ink: #2a1a00;
+  --accent: #ee5a36;
+  --accent-strong: #d63d5e;
+  --accent-soft: rgb(238 90 54 / 0.13);
+  --accent-ink: #2a0e03;
   --danger: #cf3636;
   --shadow-card: 0 1px 2px rgb(28 25 23 / 0.07), 0 8px 24px rgb(28 25 23 / 0.09);
   --shadow-pop: 0 4px 12px rgb(28 25 23 / 0.1), 0 16px 48px rgb(28 25 23 / 0.16);
@@ -89,7 +89,7 @@
   }
 
   ::selection {
-    background: rgb(255 149 0 / 0.28);
+    background: rgb(255 122 85 / 0.28);
   }
 
   :focus-visible {
