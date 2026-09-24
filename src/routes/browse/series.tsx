@@ -7,6 +7,7 @@ import { seriesApi } from '@/lib/api/series'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { HistoryBackButton } from '@/components/ui/BackButton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton, GridSkeleton } from '@/components/ui/Skeleton'
 import { MediaGrid } from '@/components/media/MediaGrid'
@@ -79,6 +80,7 @@ export function BrowseSeriesPage() {
 
   return (
     <div>
+      <HistoryBackButton to="/dashboard" className="mb-2 -ml-2" />
       <PageHeader title={title} />
       <FilterBar
         count={total}

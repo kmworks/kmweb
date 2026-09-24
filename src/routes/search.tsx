@@ -10,6 +10,7 @@ import type { Page } from '@/lib/api/types'
 import { useDensityCardWidth } from '@/lib/store/ui'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { HistoryBackButton } from '@/components/ui/BackButton'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { CardSkeleton, GridSkeleton, Skeleton } from '@/components/ui/Skeleton'
 import { BookCard } from '@/components/media/BookCard'
@@ -67,6 +68,7 @@ export function SearchPage() {
 
   return (
     <div>
+      <HistoryBackButton to="/dashboard" className="mb-2 -ml-2" />
       <div className="mb-7 overflow-x-auto pb-1">
         <SegmentedControl<SearchTab> options={[...TABS]} value={tab} onChange={onTabChange} />
       </div>
