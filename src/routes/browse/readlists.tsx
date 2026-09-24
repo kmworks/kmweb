@@ -5,6 +5,7 @@ import { BookmarkSimple, MagnifyingGlass, WarningCircle } from '@phosphor-icons/
 import { readlistsApi } from '@/lib/api/collections'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { HistoryBackButton } from '@/components/ui/BackButton'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { CardSkeleton, GridSkeleton } from '@/components/ui/Skeleton'
 import { MediaGrid } from '@/components/media/MediaGrid'
@@ -60,6 +61,7 @@ export function BrowseReadListsPage() {
 
   return (
     <div>
+      <HistoryBackButton to="/dashboard" className="mb-2 -ml-2" />
       <PageHeader
         title="Read lists"
         subtitle={

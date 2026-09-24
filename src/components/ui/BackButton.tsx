@@ -20,3 +20,12 @@ export function BackButton({ to, className }: { to: string; className?: string }
     </IconButton>
   )
 }
+
+/**
+ * For top-level pages (browse, search) that are also link targets from other pages:
+ * renders nothing on a direct load, where there is nothing to go back to.
+ */
+export function HistoryBackButton({ to, className }: { to: string; className?: string }) {
+  if ((window.history.state?.idx ?? 0) <= 0) return null
+  return <BackButton to={to} className={className} />
+}
