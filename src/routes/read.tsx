@@ -20,7 +20,7 @@ import { needsConvert, supportedImageFormats } from '@/lib/utils/imageSupport'
 import { urls } from '@/lib/utils/urls'
 import type { PagedReaderLayout, SpreadPage } from '@/lib/utils/spreads'
 import { readingDirectionLabel } from '@/lib/utils/format'
-import { mediaIssue } from '@/lib/utils/mediaStatus'
+import { convertErrorCodes, mediaIssue } from '@/lib/utils/mediaStatus'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { ContinuousReader } from '@/components/reader/ContinuousReader'
@@ -53,6 +53,17 @@ const DIRECTION_BY_KEY: Record<string, ReadingDirection> = {
   r: 'RIGHT_TO_LEFT',
   v: 'VERTICAL',
   w: 'WEBTOON',
+}
+
+function loadErrorReason(error: unknown): string {
+  if (error instanceof ApiError) {
+    const msg = convertErrorCodes(error.message)
+    return msg.startsWith(String(error.status)) ? msg : `HTTP ${error.status} · ${msg}`
+  }
+  // network failures surface as bare TypeError from fetch, with no useful message
+  if (error instanceof TypeError) return 'Could not reach the server. Check your connection and try again.'
+  if (error instanceof Error) return error.message
+  return 'Unknown error'
 }
 
 export function ReaderPage() {
@@ -395,7 +406,17 @@ function Reader({ bookId }: { bookId: string }) {
         <EmptyState
           icon={notFound ? <BookOpen weight="duotone" /> : <Warning weight="duotone" />}
           title={notFound ? 'Book not found' : 'Failed to load book'}
-          action={<Button onClick={() => navigate('/dashboard')}>Back to dashboard</Button>}
+          body={notFound ? 'It may have been deleted, or you do not have access to it.' : loadErrorReason(bookQuery.error)}
+          action={
+            <div className="flex items-center gap-2">
+              {!notFound && (
+                <Button variant="primary" loading={bookQuery.isFetching} onClick={() => bookQuery.refetch()}>
+                  Retry
+                </Button>
+              )}
+              <Button onClick={() => navigate('/dashboard')}>Back to dashboard</Button>
+            </div>
+          }
         />
       </div>
     )
@@ -423,7 +444,15 @@ function Reader({ bookId }: { bookId: string }) {
         <EmptyState
           icon={<Warning weight="duotone" />}
           title="Failed to load pages"
-          action={<Button onClick={() => navigate(`/book/${bookId}`)}>Back to book</Button>}
+          body={loadErrorReason(pagesQuery.error)}
+          action={
+            <div className="flex items-center gap-2">
+              <Button variant="primary" loading={pagesQuery.isFetching} onClick={() => pagesQuery.refetch()}>
+                Retry
+              </Button>
+              <Button onClick={() => navigate(`/book/${bookId}`)}>Back to book</Button>
+            </div>
+          }
         />
       </div>
     )
