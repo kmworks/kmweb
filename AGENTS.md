@@ -1,0 +1,35 @@
+# AGENTS.md
+
+Rules that must not be violated when working in this repository. For architecture and feature details, read the code.
+
+## Project
+
+**kmweb** is the web UI for [kmrs](https://github.com/kmworks/kmrs), built with React 19, TypeScript, Vite, Tailwind CSS v4, TanStack Query, Zustand and Radix UI. There are no test targets: validate with builds, lint, and manual testing.
+
+## Commands
+
+```bash
+pnpm dev      # dev server on :5173, proxies /api /sse /actuator to :25600
+pnpm build    # typecheck + production bundle; the validation gate
+pnpm lint     # eslint
+```
+
+## Coding Conventions
+
+1. **Comments**: minimal, English only; explain why, not what; no issue/PR numbers (link issues in the PR description instead).
+2. **Git-facing text**: commit messages, PR titles/bodies, and review comments are always in English.
+3. Light/dark color differences belong in the CSS custom properties of `src/index.css` (`--ink`, `--raised`, `--line`, …), not in JS theme branching.
+4. Icon weight (phosphor `weight="fill"` and friends) is a render-site decision: components expose the base icon and the site that knows its context picks the weight. Exception: an icon that renders filled in every context is part of the status's identity (e.g. the completed checkmark).
+5. Never render empty wrapper elements; put the condition around the wrapper itself.
+6. API endpoints live in `src/lib/api/*`; request building stays out of components.
+7. Components passed as `trigger` to `Menu` (Radix `asChild`) must forward props and ref (`forwardRef` + `{...rest}`) — the injected handlers and state attributes never reach the DOM otherwise, and the menu silently never opens.
+8. When a change alters one of these conventions or a subsystem boundary, update this file in the same change.
+
+## Cards
+
+- Grid cards (books, series) navigate to the detail page; only horizontal cards (Keep Reading) open the reader directly. The card menu complements the tap and never duplicates it: grid cards get a Read action, horizontal cards get Book details — Read and Details are mutually exclusive.
+- Card menus share `BookCardMenu` / `SeriesCardMenu` (they also host the dialogs their items open). The trigger is the hover/focus-revealed `CardMenuButton` at the cover's top-left, always visible at reduced opacity on touch (`pointer-coarse`); menus hide in selection mode.
+- Entering selection mode is a menu item, so the corner checkbox (`SelectBadge`) appears only once selection is active.
+- Corner badges: series cards show the unread count, book cards show a completed checkmark.
+- Horizontal cards follow the Apple Books contract: semibold title on top, series line under it, meta line at the bottom in stepped-down sizes (13/12/11px); vertical slack distributes evenly across every gap; the cover height matches the four-line text column so the card is no taller than its text. They sit on a cover-tinted background — the cover's average color, saturation- and brightness-clamped so white text stays readable (`useCoverTint`); until the tint resolves the card falls back to the plain card fill with adaptive colors. On the tint all text is white: title full (70% once completed), series 85%, meta and accessories 70%.
+- Oneshots: book grid cards show "Oneshot" in the series-title slot (the title clamps to one line); oneshot series cards show "Oneshot" as their status line (checkmark when completed).

@@ -5,6 +5,7 @@ import type { BookDto, Page, SearchCondition, SeriesDto } from '@/lib/api/types'
 import { BookCard } from '@/components/media/BookCard'
 import { KeepReadingCard } from '@/components/media/KeepReadingCard'
 import { SeriesCard } from '@/components/media/SeriesCard'
+import { HorizontalCardSkeleton } from '@/components/ui/Skeleton'
 import { useDensityCardWidth } from '@/lib/store/ui'
 
 const PAGE_SIZE = 20
@@ -16,6 +17,8 @@ export interface DashboardSectionDef {
   fetchPage: (libraryIds: string[] | undefined, page: number) => Promise<Page<BookDto | SeriesDto>>
   renderRow: (item: BookDto | SeriesDto) => ReactNode
   renderGrid: (item: BookDto | SeriesDto) => ReactNode
+  /** pending placeholder for the row; defaults to grid card skeletons */
+  renderSkeleton?: () => ReactNode
 }
 
 interface BookSectionDef {
@@ -23,6 +26,7 @@ interface BookSectionDef {
   fetchPage: (libraryIds: string[] | undefined, page: number) => Promise<Page<BookDto>>
   renderRow: (book: BookDto) => ReactNode
   renderGrid: (book: BookDto) => ReactNode
+  renderSkeleton?: () => ReactNode
 }
 
 interface SeriesSectionDef {
@@ -81,6 +85,7 @@ export const DASHBOARD_SECTIONS = {
       }),
     renderRow: (b) => <KeepReadingCard book={b} className="snap-start" />,
     renderGrid: bookGrid,
+    renderSkeleton: () => <HorizontalCardSkeleton />,
   }),
   'on-deck': bookSection({
     title: 'On Deck',

@@ -169,6 +169,7 @@ export function DashboardPage() {
               query={query}
               keyOf={(item) => item.id}
               renderItem={DASHBOARD_SECTIONS[key].renderRow}
+              skeleton={DASHBOARD_SECTIONS[key].renderSkeleton?.()}
             />
           ))}
         </div>
