@@ -1,78 +1,102 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Play } from '@phosphor-icons/react'
+import { useNavigate, Link } from 'react-router-dom'
+import { BookOpen, CheckCircle, DotsThree } from '@phosphor-icons/react'
 import type { BookDto } from '@/lib/api/types'
 import { urls } from '@/lib/utils/urls'
 import { readRoute } from '@/lib/utils/nav'
 import { useBust } from '@/lib/store/thumbnails'
-import { plural } from '@/lib/utils/format'
+import { plural, relativeTime } from '@/lib/utils/format'
+import { mediaStatusLabel } from '@/lib/utils/mediaStatus'
+import { useCoverTint } from '@/lib/utils/coverTint'
 import { cn } from '@/lib/utils/cn'
+import { MenuItem } from '@/components/ui/Menu'
+import { BookCardMenu } from './BookCardMenu'
 
 /**
- * Apple Books-style resume card: blurred cover as the card background,
- * crisp cover on the left, progress line along the bottom edge.
+ * Apple Books-style resume card: cover-tinted solid background, small cover on
+ * the left, title/series/progress lines on the right, trailing ellipsis menu.
  */
 export function KeepReadingCard({ book, className }: { book: BookDto; className?: string }) {
+  const navigate = useNavigate()
   const bust = useBust(book.id)
   const cover = urls.bookThumbnail(book.id, bust || undefined)
+  const tint = useCoverTint(cover)
+  const tinted = tint !== null
   const to = readRoute(book) ?? `/book/${book.id}`
-  const pct = book.media.pagesCount > 0 && book.readProgress ? book.readProgress.page / book.media.pagesCount : 0
-  const [bgLoaded, setBgLoaded] = useState(false)
+  const title = book.metadata.title || book.name
+  const completed = book.readProgress?.completed ?? false
+  const pct = !completed && book.media.pagesCount > 0 && book.readProgress ? book.readProgress.page / book.media.pagesCount : 0
+
+  const titleColor = tinted ? (completed ? 'text-white/70' : 'text-white') : completed ? 'text-ink-2' : 'text-ink'
+  const seriesColor = tinted ? 'text-white/85' : 'text-ink'
+  const metaColor = tinted ? 'text-white/70' : 'text-ink-2'
+
+  const statusLabel = mediaStatusLabel(book.media.status)
+  const meta = statusLabel ? (
+    <span className={statusLabel.className}>{statusLabel.text}</span>
+  ) : completed ? (
+    <span className="inline-flex items-center gap-1">
+      <CheckCircle className="size-3" weight="fill" />
+      {relativeTime(book.readProgress!.readDate)}
+    </span>
+  ) : (
+    `${Math.round(pct * 100)}% · ${plural(book.media.pagesCount, 'page')}`
+  )
 
   return (
-    <Link
-      to={to}
-      aria-label={`Continue reading ${book.metadata.title || book.name}`}
+    <div
       className={cn(
-        'group relative block w-[300px] shrink-0 cursor-pointer overflow-hidden rounded-xl bg-raised',
-        'transition-[transform,scale,box-shadow,filter] duration-300 ease-out-expo group-hover:shadow-card group-hover:brightness-[1.07] active:scale-[0.98]',
+        'group relative flex w-[250px] shrink-0 items-center rounded-xl p-2 transition-[background-color,box-shadow,filter] duration-200 hover:shadow-card hover:brightness-[1.07]',
+        !tinted && 'bg-raised',
         className,
       )}
+      style={tint ? { backgroundColor: tint } : undefined}
     >
-      {/* blurred cover backdrop: stretch (not crop) so the tint carries the cover's overall
-          tone; the overscan keeps the blur from sampling past the image and darkening edges.
-          Saturation is boosted past 1 or the tint washes out to gray under the dimming layer */}
-      <img
-        src={cover}
-        alt=""
-        aria-hidden
-        loading="lazy"
-        onLoad={() => setBgLoaded(true)}
-        className={cn(
-          'absolute inset-0 size-full scale-[1.3] object-fill blur-2xl saturate-[1.25] transition-opacity duration-500',
-          bgLoaded ? 'opacity-100' : 'opacity-0',
-        )}
-      />
-      {/* even dimming layer so the white title stays readable on light covers */}
-      <div className="absolute inset-0 bg-black/30" />
       <div aria-hidden className="pointer-events-none absolute inset-0 rounded-[inherit] inset-ring-1 inset-ring-line" />
 
-      <div className="relative flex h-30 items-stretch gap-3.5 p-3.5">
+      {/* cover + text form a single navigation target; the trailing menu stays a separate one */}
+      <Link to={to} aria-label={`Continue reading ${title}`} className="flex min-w-0 flex-1 items-center gap-3 self-stretch outline-none">
         <img
           src={cover}
-          alt={book.metadata.title || book.name}
+          alt={title}
           loading="lazy"
           draggable={false}
-          className="cover-aspect h-full shrink-0 rounded-md object-cover shadow-[0_2px_10px_rgb(0_0_0/0.5)]"
+          className="cover-aspect w-[45px] shrink-0 rounded-md object-cover shadow-[0_2px_10px_rgb(0_0_0/0.5)] ring-1 ring-line"
         />
-        <div className="flex min-w-0 flex-1 flex-col justify-center py-0.5">
-          <p className="truncate text-[11px] font-medium tracking-wide text-white/65 uppercase">{book.seriesTitle}</p>
-          <p className="mt-1 line-clamp-2 text-[13.5px] leading-snug font-medium text-white">
-            {book.metadata.title || book.name}
-          </p>
-          <p className="mt-auto truncate pt-2 text-[11px] text-white/70 tabular-nums">
-            {Math.round(pct * 100)}% · {plural(book.media.pagesCount, 'page')}
-          </p>
+        <div className="flex min-w-0 flex-1 flex-col self-stretch">
+          <div className="flex-1" />
+          <div>
+            <p className={cn('line-clamp-2 pb-1 text-[13px] leading-snug font-semibold', titleColor)}>{title}</p>
+            {(book.oneshot || book.seriesTitle) && (
+              <p className={cn('truncate text-xs', seriesColor)}>{book.oneshot ? 'Oneshot' : book.seriesTitle}</p>
+            )}
+          </div>
+          <div className="flex-1" />
+          <p className={cn('truncate text-[11px] tabular-nums', metaColor)}>{meta}</p>
+          <div className="flex-1" />
         </div>
-        <div className="absolute right-3 bottom-3 flex size-7 items-center justify-center rounded-full bg-accent text-accent-ink opacity-0 shadow-md transition-opacity duration-200 group-hover:opacity-100">
-          <Play className="size-3.5" weight="fill" />
-        </div>
-      </div>
+      </Link>
 
-      {/* pinned to the card's bottom edge so the hover play button can never collide with it */}
-      <div className="absolute inset-x-0 bottom-0 h-1 bg-white/25">
-        <div className="h-full bg-accent" style={{ width: `${Math.max(pct * 100, 4)}%` }} />
-      </div>
-    </Link>
+      <BookCardMenu
+        book={book}
+        navItem={
+          <MenuItem onSelect={() => navigate(`/book/${book.id}`)}>
+            <BookOpen className="size-4" /> Book details
+          </MenuItem>
+        }
+        trigger={
+          <button
+            type="button"
+            aria-label={`Actions for ${title}`}
+            className={cn(
+              'inline-flex size-9 shrink-0 cursor-pointer items-center justify-center self-center rounded-full transition-colors',
+              metaColor,
+              tinted ? 'hover:bg-white/10' : 'hover:bg-ink/5',
+            )}
+          >
+            <DotsThree className="size-4" weight="bold" />
+          </button>
+        }
+      />
+    </div>
   )
 }

@@ -15,6 +15,19 @@ export function CardSkeleton({ className }: { className?: string }) {
   )
 }
 
+export function HorizontalCardSkeleton() {
+  return (
+    <div className="flex w-[250px] shrink-0 snap-start items-center gap-3 rounded-xl bg-raised p-2">
+      <Skeleton className="cover-aspect w-[45px] shrink-0 rounded-md" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1.5 py-1">
+        <Skeleton className="h-3.5 w-4/5" />
+        <Skeleton className="h-3 w-3/5" />
+        <Skeleton className="mt-auto h-3 w-2/5" />
+      </div>
+    </div>
+  )
+}
+
 export function GridSkeleton({ count = 12, className }: { count?: number; className?: string }) {
   const min = useDensityCardWidth()
   return (

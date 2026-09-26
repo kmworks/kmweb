@@ -1,5 +1,6 @@
-import type { ReactNode } from 'react'
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { DotsThree } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils/cn'
 import { useUiStore } from '@/lib/store/ui'
 
@@ -8,24 +9,56 @@ interface CardFrameProps {
   children: ReactNode
   className?: string
   label: string
+  /** overlay controls (e.g. the actions menu); rendered as siblings of the link so no
+      interactive element nests inside the <a> */
+  actions?: ReactNode
 }
 
 /** Shared hover/press treatment for all media cards. */
-export function CardFrame({ to, children, className, label }: CardFrameProps) {
-  return (
+export function CardFrame({ to, children, className, label, actions }: CardFrameProps) {
+  const link = (
     <Link
       to={to}
       aria-label={label}
       className={cn(
         'group block cursor-pointer rounded-lg outline-none transition-transform duration-200 ease-out-expo',
         'active:scale-[0.98]',
-        className,
+        actions ? undefined : className,
       )}
     >
       {children}
     </Link>
   )
+  if (!actions) return link
+  return (
+    <div className={cn('group relative rounded-lg', className)}>
+      {link}
+      {actions}
+    </div>
+  )
 }
+
+/** Hover-revealed menu trigger pinned to the cover's top-left (badges live top-right);
+    on cards with a selection checkbox it shifts right of it via className. Forwards
+    props+ref because Radix Trigger asChild injects handlers/state onto the child. */
+export const CardMenuButton = forwardRef<HTMLButtonElement, ButtonHTMLAttributes<HTMLButtonElement>>(
+  function CardMenuButton({ className, ...rest }, ref) {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(
+          'absolute top-1.5 left-1 z-10 inline-flex size-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white shadow-sm backdrop-blur-sm transition-opacity hover:bg-black/80',
+          'opacity-0 group-hover:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 pointer-coarse:opacity-70',
+          className,
+        )}
+        {...rest}
+      >
+        <DotsThree className="size-4" weight="bold" />
+      </button>
+    )
+  },
+)
 
 interface CardTextProps {
   title: string
@@ -42,7 +75,7 @@ export function CardText({ title, overline, secondary, titleLines = 1 }: CardTex
   const cardStyle = useUiStore((s) => s.cardStyle)
   if (cardStyle !== 'standard') return null
   return (
-    <div className="mt-2 min-w-0 px-0.5">
+    <div className="mt-2 min-w-0 px-1.5">
       {overline && <p className="mb-0.5 truncate text-[11px] leading-snug text-ink-3">{overline}</p>}
       <p className={cn('text-[13px] leading-snug font-medium text-ink', titleLines === 2 ? 'line-clamp-2' : 'truncate')}>
         {title}

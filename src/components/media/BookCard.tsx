@@ -1,11 +1,15 @@
 import type { BookDto } from '@/lib/api/types'
-import { CheckCircle } from '@phosphor-icons/react'
+import { useNavigate } from 'react-router-dom'
+import { CheckCircle, Play } from '@phosphor-icons/react'
 import { urls } from '@/lib/utils/urls'
+import { readRoute } from '@/lib/utils/nav'
 import { useBust } from '@/lib/store/thumbnails'
 import { useUiStore } from '@/lib/store/ui'
 import { CoverImage } from './CoverImage'
-import { CardFrame, CardText, CardOverlayText } from './CardFrame'
+import { CardFrame, CardMenuButton, CardText, CardOverlayText } from './CardFrame'
 import { ProgressCapsule, CompletedBadge } from './badges'
+import { BookCardMenu } from './BookCardMenu'
+import { MenuItem } from '@/components/ui/Menu'
 import { SelectBadge } from '@/components/selection/SelectBadge'
 import type { CardSelection } from '@/components/selection/useSelection'
 import { plural, relativeTime } from '@/lib/utils/format'
@@ -23,6 +27,7 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, className, showSeries, eager, selection }: BookCardProps) {
+  const navigate = useNavigate()
   const bust = useBust(book.id)
   const blurUnread = useUiStore((s) => s.blurUnreadCovers)
   const title = book.metadata.title || book.name
@@ -32,7 +37,7 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
     ? book.readProgress.page / book.media.pagesCount
     : 0
 
-  // KMReader-style meta line: in-progress "45% · 120 pages", completed "✓ 3d ago"
+  // meta line: in-progress "45% · 120 pages", completed "✓ 3d ago"
   const readAgo = book.readProgress?.completed ? relativeTime(book.readProgress.readDate) : ''
   const metaParts: string[] = []
   if (!showSeries) metaParts.push(`#${book.metadata.number}`)
@@ -48,8 +53,10 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
     metaParts.join(' · ')
   )
 
-  const overline = showSeries ? book.seriesTitle : undefined
-  const titleLines = showSeries ? 1 : 2
+  // oneshots get the "Oneshot" label in the series-title slot, and the title clamps
+  // to one line just like when a series title is shown
+  const overline = book.oneshot ? 'Oneshot' : showSeries ? book.seriesTitle : undefined
+  const titleLines = showSeries || book.oneshot ? 1 : 2
 
   // like komga's card body line: a broken media status replaces the normal meta
   const statusLabel = mediaStatusLabel(book.media.status)
@@ -60,7 +67,25 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
   )
 
   const frame = (
-    <CardFrame to={`/book/${book.id}`} label={title} className={selection ? undefined : className}>
+    <CardFrame
+      to={`/book/${book.id}`}
+      label={title}
+      className={selection ? undefined : className}
+      actions={
+        selection?.active ? undefined : (
+          <BookCardMenu
+            book={book}
+            navItem={
+              <MenuItem onSelect={() => navigate(readRoute(book) ?? `/book/${book.id}`)}>
+                <Play className="size-4" /> Read
+              </MenuItem>
+            }
+            onSelect={selection?.onToggle}
+            trigger={<CardMenuButton aria-label={`Actions for ${title}`} />}
+          />
+        )
+      }
+    >
       <div className="relative">
         <CoverImage
           src={urls.bookThumbnail(book.id, bust || undefined)}
@@ -69,7 +94,7 @@ export function BookCard({ book, className, showSeries, eager, selection }: Book
           blurred={blurUnread && unread}
           className={cn(selection?.selected && 'ring-2 ring-accent')}
         />
-        {selection && <SelectBadge {...selection} label={title} />}
+        {selection?.active && <SelectBadge {...selection} label={title} />}
         {book.readProgress?.completed && <CompletedBadge />}
         <ProgressCapsule value={progress} />
         <CardOverlayText title={title} overline={overline} secondary={secondaryText} titleLines={titleLines} />

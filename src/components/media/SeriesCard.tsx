@@ -1,16 +1,31 @@
+import type { ReactNode } from 'react'
 import type { SeriesDto } from '@/lib/api/types'
+import { CheckCircle } from '@phosphor-icons/react'
 import { urls } from '@/lib/utils/urls'
 import { useBust } from '@/lib/store/thumbnails'
 import { useUiStore } from '@/lib/store/ui'
 import { CoverImage } from './CoverImage'
-import { CardFrame, CardText, CardOverlayText } from './CardFrame'
+import { CardFrame, CardMenuButton, CardText, CardOverlayText } from './CardFrame'
 import { ProgressCapsule, UnreadBadge } from './badges'
+import { SeriesCardMenu } from './SeriesCardMenu'
 import { SelectBadge } from '@/components/selection/SelectBadge'
 import type { CardSelection } from '@/components/selection/useSelection'
 import { cn } from '@/lib/utils/cn'
 
-function secondaryLine(series: SeriesDto): string {
+function secondaryLine(series: SeriesDto): ReactNode {
   const { booksCount, booksUnreadCount, booksInProgressCount, booksReadCount } = series
+  // oneshot series show "Oneshot" as their status line (checkmark when completed)
+  // instead of a meaningless "1 books"
+  if (series.oneshot) {
+    return booksReadCount > 0 ? (
+      <span className="inline-flex items-center gap-1">
+        <CheckCircle className="size-3" weight="fill" />
+        Oneshot
+      </span>
+    ) : (
+      'Oneshot'
+    )
+  }
   if (booksInProgressCount > 0 && booksCount > 0) {
     return `${Math.round((booksReadCount / booksCount) * 100)}% · ${booksCount} books`
   }
@@ -32,7 +47,20 @@ export function SeriesCard({ series, className, eager, selection }: SeriesCardPr
   const title = series.metadata.title || series.name
 
   const frame = (
-    <CardFrame to={`/series/${series.id}`} label={title} className={selection ? undefined : className}>
+    <CardFrame
+      to={`/series/${series.id}`}
+      label={title}
+      className={selection ? undefined : className}
+      actions={
+        selection?.active ? undefined : (
+          <SeriesCardMenu
+            series={series}
+            onSelect={selection?.onToggle}
+            trigger={<CardMenuButton aria-label={`Actions for ${title}`} />}
+          />
+        )
+      }
+    >
       <div className="relative">
         <CoverImage
           src={urls.seriesThumbnail(series.id, bust || undefined)}
@@ -41,7 +69,7 @@ export function SeriesCard({ series, className, eager, selection }: SeriesCardPr
           blurred={blurUnread && series.booksUnreadCount > 0}
           className={cn(selection?.selected && 'ring-2 ring-accent')}
         />
-        {selection && <SelectBadge {...selection} label={title} />}
+        {selection?.active && <SelectBadge {...selection} label={title} />}
         <UnreadBadge count={series.booksUnreadCount} />
         <ProgressCapsule
           value={series.booksCount > 0 && series.booksInProgressCount > 0 ? series.booksReadCount / series.booksCount : 0}

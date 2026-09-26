@@ -6,7 +6,7 @@ server rewritten in Rust.
 Built with React 19, Vite, Tailwind CSS v4, TanStack Query and Zustand.
 The design language follows [KMReader](https://github.com/kmworks/kmreader):
 dark-first themes, a warm orange accent, √2 covers, serif section titles and
-blurred-cover resume cards.
+cover-tinted resume cards.
 
 ## Features
 

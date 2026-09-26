@@ -15,18 +15,22 @@ interface DashboardRowProps<T> {
   query: PagedRowQuery<T>
   keyOf: (item: T) => string
   renderItem: (item: T) => ReactNode
+  /** pending placeholder item; defaults to grid card skeletons */
+  skeleton?: ReactNode
 }
 
-export function DashboardRow<T>({ title, to, query, keyOf, renderItem }: DashboardRowProps<T>) {
+export function DashboardRow<T>({ title, to, query, keyOf, renderItem, skeleton }: DashboardRowProps<T>) {
   const cardWidth = useDensityCardWidth()
   if (query.isPending) {
     return (
       <HorizontalRow title={title} to={to}>
-        {Array.from({ length: 5 }, (_, i) => (
-          <div key={i} className="shrink-0 snap-start" style={{ width: cardWidth }}>
-            <CardSkeleton />
-          </div>
-        ))}
+        {skeleton
+          ? Array.from({ length: 3 }, (_, i) => <Fragment key={i}>{skeleton}</Fragment>)
+          : Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="shrink-0 snap-start" style={{ width: cardWidth }}>
+                <CardSkeleton />
+              </div>
+            ))}
       </HorizontalRow>
     )
   }
