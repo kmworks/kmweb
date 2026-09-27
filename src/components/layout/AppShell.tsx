@@ -51,8 +51,10 @@ import { useLibraryPrefs } from '@/lib/store/libraryPrefs'
 import { usePinnedLibraries } from '@/lib/store/clientSettings'
 import { useTaskQueue } from '@/lib/store/taskQueue'
 import { queryClient } from '@/lib/queryClient'
+import { taskTypeLabel } from '@/components/admin/server/format'
 import { LogoMark } from '@/components/LogoMark'
 import { IconButton } from '@/components/ui/IconButton'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { Menu, MenuItem, MenuLabel, MenuSeparator } from '@/components/ui/Menu'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
@@ -467,19 +469,35 @@ function SyncedSearchBox() {
 // TaskQueueStatus is only pushed on the admin stream, so non-admins keep a
 // zero count and the badge never renders for them.
 function TaskQueueBadge() {
-  const count = useTaskQueue((s) => s.status?.count ?? 0)
+  const status = useTaskQueue((s) => s.status)
+  const count = status?.count ?? 0
   if (count === 0) return null
+  const entries = Object.entries(status?.countByType ?? {}).sort((a, b) => b[1] - a[1])
   const label = plural(count, 'queued task')
   return (
-    <Link
-      to="/admin/server"
-      title={label}
-      aria-label={label}
-      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2 text-ink-2 transition-colors duration-150 hover:bg-raised hover:text-ink"
+    <Tooltip
+      side="bottom"
+      content={
+        <div className="flex flex-col gap-0.5">
+          <div className="font-medium">{label}</div>
+          {entries.map(([type, n]) => (
+            <div key={type} className="flex items-center justify-between gap-4">
+              <span>{taskTypeLabel(type)}</span>
+              <span className="tabular-nums">{n}</span>
+            </div>
+          ))}
+        </div>
+      }
     >
-      <Queue className="size-5" />
-      <span className="text-[13px] font-medium tabular-nums">{count}</span>
-    </Link>
+      <Link
+        to="/admin/server"
+        aria-label={label}
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2 text-ink-2 transition-colors duration-150 hover:bg-raised hover:text-ink"
+      >
+        <Queue className="size-5" />
+        <span className="text-[13px] font-medium tabular-nums">{count}</span>
+      </Link>
+    </Tooltip>
   )
 }
 
