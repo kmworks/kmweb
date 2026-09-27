@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BookBookmark,
@@ -62,6 +62,7 @@ import { Switch } from '@/components/ui/Switch'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
 import { SearchScopeMenu } from '@/components/search/SearchScopeMenu'
+import { useSearchScopeDefault } from '@/components/search/scope'
 
 function NavItem({
   to,
@@ -375,21 +376,20 @@ function useSlashFocus(ref: React.RefObject<HTMLInputElement | null>) {
 
 function TopSearchBox() {
   const navigate = useNavigate()
-  const libraryMatch = useMatch('/libraries/:libraryId/*')
+  const { value: scope } = useSearchScopeDefault()
   const [q, setQ] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   useSlashFocus(inputRef)
 
   return (
     <form
-      className="relative w-full max-w-md"
+      className="relative w-full max-w-md min-w-0"
       onSubmit={(e) => {
         e.preventDefault()
         const trimmed = q.trim()
         if (!trimmed) return
         const params = new URLSearchParams({ q: trimmed })
-        // searching from inside a library defaults to that library's scope
-        if (libraryMatch?.params.libraryId) params.set('scope', libraryMatch.params.libraryId)
+        if (scope !== 'all') params.set('scope', scope)
         navigate(`/search?${params}`)
       }}
     >
@@ -630,8 +630,9 @@ export function AppShell() {
             </div>
           ) : (
             <>
-              <div className="hidden flex-1 md:block">
+              <div className="hidden min-w-0 flex-1 items-center gap-2 md:flex">
                 <TopSearchBox />
+                <SearchScopeMenu />
               </div>
               <div className="flex-1 md:hidden" />
               <IconButton label="Search" className="md:hidden" onClick={() => navigate('/search')}>

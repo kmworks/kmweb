@@ -6,6 +6,7 @@ import type { ClientSettingDto } from '@/lib/api/types'
 const USER_SETTINGS_KEY = ['client-settings', 'user'] as const
 
 export const PINNED_LIBRARIES_KEY = 'webui.pinned.libraries'
+export const SEARCH_SCOPE_KEY = 'webui.search.scope'
 export const DASHBOARD_SECTIONS_KEY = 'webui.dashboard.sections'
 
 export const dashboardSectionsKey = (libraryId?: string) =>
@@ -39,7 +40,7 @@ export function useSetUserSetting() {
   })
 }
 
-function parseJson(raw: string | undefined): unknown {
+export function parseJson(raw: string | undefined): unknown {
   if (raw === undefined) return undefined
   try {
     return JSON.parse(raw)

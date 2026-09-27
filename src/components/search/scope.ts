@@ -1,5 +1,5 @@
 import { useSearchParams } from 'react-router-dom'
-import { usePinnedLibraries } from '@/lib/store/clientSettings'
+import { parseJson, SEARCH_SCOPE_KEY, usePinnedLibraries, useSetUserSetting, useUserClientSettings } from '@/lib/store/clientSettings'
 
 export type SearchScope = { kind: 'all' } | { kind: 'pinned'; ids: string[] } | { kind: 'library'; id: string }
 
@@ -18,6 +18,23 @@ export function scopeLibraryIds(scope: SearchScope): string[] | undefined {
 export function scopeKey(scope: SearchScope): string {
   if (scope.kind === 'all') return 'all'
   return scope.kind === 'pinned' ? `pinned:${scope.ids.join(',')}` : scope.id
+}
+
+export function scopeValue(scope: SearchScope): string {
+  if (scope.kind === 'all') return 'all'
+  return scope.kind === 'pinned' ? 'pinned' : scope.id
+}
+
+// scope for searches started outside /search, where the URL carries no ?scope=
+// param; persisted as a user client setting so it follows the account
+export function useSearchScopeDefault() {
+  const query = useUserClientSettings()
+  const { pinned } = usePinnedLibraries()
+  const raw = parseJson(query.data?.[SEARCH_SCOPE_KEY]?.value)
+  const value = scopeValue(parseScope(typeof raw === 'string' ? raw : null, pinned))
+  const mutation = useSetUserSetting()
+  const setValue = (v: string) => mutation.mutate({ key: SEARCH_SCOPE_KEY, value: JSON.stringify(v) })
+  return { value, setValue }
 }
 
 // the ?scope= param is the single source of truth, shared by the header scope
