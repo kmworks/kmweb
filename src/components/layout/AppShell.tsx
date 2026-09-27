@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BookBookmark,
@@ -27,6 +27,7 @@ import {
   Palette,
   Playlist,
   PushPin,
+  Queue,
   Rocket,
   ShieldCheck,
   SignOut,
@@ -40,6 +41,7 @@ import {
 } from '@phosphor-icons/react'
 import { AnimatePresence, motion } from 'motion/react'
 import { cn } from '@/lib/utils/cn'
+import { plural } from '@/lib/utils/format'
 import { librariesApi } from '@/lib/api/libraries'
 import { usersApi } from '@/lib/api/users'
 import { serverApi } from '@/lib/api/users'
@@ -47,6 +49,7 @@ import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { useUiStore } from '@/lib/store/ui'
 import { useLibraryPrefs } from '@/lib/store/libraryPrefs'
 import { usePinnedLibraries } from '@/lib/store/clientSettings'
+import { useTaskQueue } from '@/lib/store/taskQueue'
 import { queryClient } from '@/lib/queryClient'
 import { LogoMark } from '@/components/LogoMark'
 import { IconButton } from '@/components/ui/IconButton'
@@ -461,6 +464,25 @@ function SyncedSearchBox() {
   )
 }
 
+// TaskQueueStatus is only pushed on the admin stream, so non-admins keep a
+// zero count and the badge never renders for them.
+function TaskQueueBadge() {
+  const count = useTaskQueue((s) => s.status?.count ?? 0)
+  if (count === 0) return null
+  const label = plural(count, 'queued task')
+  return (
+    <Link
+      to="/admin/server"
+      title={label}
+      aria-label={label}
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2 text-ink-2 transition-colors duration-150 hover:bg-raised hover:text-ink"
+    >
+      <Queue className="size-5" />
+      <span className="text-[13px] font-medium tabular-nums">{count}</span>
+    </Link>
+  )
+}
+
 function ThemeButton() {
   const theme = useUiStore((s) => s.theme)
   const setTheme = useUiStore((s) => s.setTheme)
@@ -587,6 +609,7 @@ export function AppShell() {
               </IconButton>
             </>
           )}
+          <TaskQueueBadge />
           <ThemeButton />
           <AppearanceMenu />
         </header>
