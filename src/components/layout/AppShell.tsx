@@ -61,6 +61,7 @@ import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { PinLibrariesDialog } from '@/components/layout/PinLibrariesDialog'
+import { SearchScopeMenu } from '@/components/search/SearchScopeMenu'
 
 function NavItem({
   to,
@@ -446,7 +447,7 @@ function SyncedSearchBox() {
   }, [input, setSearchParams])
 
   return (
-    <div className="relative w-full max-w-lg">
+    <div className="relative w-full max-w-lg min-w-0">
       <MagnifyingGlass className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-3" />
       <input
         ref={inputRef}
@@ -623,8 +624,9 @@ export function AppShell() {
             <List className="size-5" />
           </IconButton>
           {onSearchPage ? (
-            <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
               <SyncedSearchBox />
+              <SearchScopeMenu />
             </div>
           ) : (
             <>
