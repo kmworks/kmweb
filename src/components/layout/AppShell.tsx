@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation, useMatch, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import {
   BookBookmark,
@@ -586,6 +586,13 @@ export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const navigate = useNavigate()
   const onSearchPage = useLocation().pathname.startsWith('/search')
+
+  // browsing a library steers the default search scope to that library
+  const libraryId = useMatch('/libraries/:libraryId/*')?.params.libraryId
+  const setSearchScope = useUiStore((s) => s.setSearchScope)
+  useEffect(() => {
+    if (libraryId) setSearchScope(libraryId)
+  }, [libraryId, setSearchScope])
 
   return (
     <div className="flex min-h-dvh bg-bg">
