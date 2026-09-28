@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils/cn'
 export function ProgressCapsule({ value, className }: { value: number; className?: string }) {
   const pct = Math.max(0, Math.min(1, value))
   return (
-    <div aria-hidden className={cn('mt-1.5 h-[3px] px-1', className)}>
+    <div aria-hidden className={cn('mt-1 h-[3px] px-1', className)}>
       {pct > 0 && (
         <div className="h-full rounded-full bg-line-strong">
           <div
