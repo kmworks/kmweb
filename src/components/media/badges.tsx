@@ -21,22 +21,22 @@ export function ProgressCapsule({ value, className }: { value: number; className
   )
 }
 
-/** Completed-book checkmark; solid black like every other cover overlay — a light-mode
-    white disc reads as an empty SelectBadge checkbox. Muted, not accent: "read" is a
-    passive state, while accent is reserved for "something to read". */
+/** Completed-book checkmark, slightly smaller than the UnreadBadge it shares the corner
+    with; the accent family is fine here because the check glyph vs. the count is what
+    tells "read" apart from "unread" at a glance. */
 export function CompletedBadge({ show = true, className }: { show?: boolean; className?: string }) {
   return (
     <span
       aria-hidden
       className={cn(
-        'pointer-events-none absolute -top-1.5 -right-1.5 flex size-5.5 origin-top-right items-center justify-center rounded-full',
-        'bg-black text-white shadow-[0_1px_4px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.25)] ring-2 ring-bg',
+        'pointer-events-none absolute -top-1.5 -right-1.5 flex size-5 origin-top-right items-center justify-center rounded-full',
+        'bg-accent text-white shadow-[0_1px_4px_rgb(0_0_0/0.45),inset_0_1px_0_rgb(255_255_255/0.25)] ring-2 ring-bg',
         'transition-[opacity,transform] duration-200 ease-out-expo',
         show ? 'scale-100 opacity-100' : 'scale-50 opacity-0',
         className,
       )}
     >
-      <Check className="size-3" weight="bold" />
+      <Check className="size-2.5" weight="bold" />
     </span>
   )
 }
