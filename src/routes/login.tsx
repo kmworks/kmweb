@@ -9,6 +9,7 @@ import { clientSettingsApi } from '@/lib/api/clientSettings'
 import { useAuthStore } from '@/lib/store/auth'
 import { cn } from '@/lib/utils/cn'
 import { LogoMark } from '@/components/LogoMark'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/TextField'
 import { HIDE_PASSWORD_KEY } from '@/routes/admin/ui'
@@ -88,7 +89,8 @@ export function LoginPage() {
       </div>
 
       {/* form panel */}
-      <div className="flex flex-col items-center justify-center px-6 py-12">
+      <div className="relative flex flex-col items-center justify-center px-6 py-12">
+        <LanguageSwitcher className="absolute top-6 right-6" size="sm" />
         <div className="w-full max-w-sm">
           <LogoMark className="mb-10 size-18 lg:hidden" />
           <h2 className="font-display text-3xl font-semibold tracking-tight">
