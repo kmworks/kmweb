@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAuthStore } from '@/lib/store/auth'
 import { PageHeader } from '@/components/ui/PageHeader'
 import { ProfileSection } from '@/components/account/ProfileSection'
+import { LanguageSection } from '@/components/account/LanguageSection'
 
 export function AccountProfilePage() {
   const user = useAuthStore((s) => s.user)
@@ -15,6 +16,7 @@ export function AccountProfilePage() {
       <PageHeader title="Profile" subtitle={user?.email} />
       <div className="space-y-6">
         <ProfileSection />
+        <LanguageSection />
       </div>
     </div>
   )
