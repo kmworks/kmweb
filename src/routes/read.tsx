@@ -239,7 +239,8 @@ function Reader({ bookId }: { bookId: string }) {
     else navigate(`/book/${bookId}`)
   }, [navigate, bookId])
 
-  const goToBook = useCallback(() => navigate(`/book/${bookId}`), [navigate, bookId])
+  // replace keeps the reading session a single history entry, so back from the book page never loops into the reader
+  const goToBook = useCallback(() => navigate(`/book/${bookId}`, { replace: true }), [navigate, bookId])
 
   const contextQuery = useCallback(() => {
     const q = new URLSearchParams()
