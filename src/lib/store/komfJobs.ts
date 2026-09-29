@@ -47,8 +47,7 @@ function providerName(raw: string): string {
     .join(' ')
 }
 
-// abort controllers and removal timers are not UI state, so they stay outside the store
-const controllers = new Map<string, AbortController>()
+// removal timers and the aggregate stream are not UI state, so they stay outside the store
 const removeTimers = new Map<string, number>()
 
 export const useKomfJobs = create<KomfJobsState>()((set, get) => ({
@@ -56,20 +55,19 @@ export const useKomfJobs = create<KomfJobsState>()((set, get) => ({
 
   track: (jobId, label) => {
     if (get().jobs[jobId]) return
-    const controller = new AbortController()
-    controllers.set(jobId, controller)
     set((s) => ({
       jobs: { ...s.jobs, [jobId]: { id: jobId, label, text: 'Matching…', failed: null, done: false } },
     }))
-    void runJob(jobId, controller.signal)
+    restartStream()
   },
 
   dismiss: (jobId) => {
-    controllers.get(jobId)?.abort()
-    controllers.delete(jobId)
+    const job = get().jobs[jobId]
     window.clearTimeout(removeTimers.get(jobId))
     removeTimers.delete(jobId)
     removeJob(jobId)
+    // an unfinished job still holds an upstream stream on the aggregate connection
+    if (job && !job.done) restartStream()
   },
 }))
 
@@ -97,7 +95,6 @@ function removeJob(jobId: string) {
 function finishJob(jobId: string, failed: string | null) {
   const job = useKomfJobs.getState().jobs[jobId]
   if (!job || job.done) return
-  controllers.delete(jobId)
   updateJob(jobId, { done: true, failed })
   if (failed) {
     showToast(`${job.label}: ${failed}`)
@@ -113,9 +110,46 @@ function finishJob(jobId: string, failed: string | null) {
   }
 }
 
-async function runJob(jobId: string, signal: AbortSignal) {
+function unfinishedIds(): string[] {
+  return Object.values(useKomfJobs.getState().jobs)
+    .filter((j) => !j.done)
+    .map((j) => j.id)
+}
+
+// every tracked job's events arrive on one aggregate stream; adding or dropping a
+// job reopens it with the live id set
+let streamAbort: AbortController | null = null
+const resolving = new Set<string>()
+
+function restartStream() {
+  streamAbort?.abort()
+  const ids = unfinishedIds()
+  if (ids.length === 0) {
+    streamAbort = null
+    return
+  }
+  const controller = new AbortController()
+  streamAbort = controller
+  void runStream(ids, controller.signal).finally(() => {
+    if (streamAbort !== controller) return
+    streamAbort = null
+    // the stream ended with jobs still unresolved (dropped connection, komf
+    // restart): their final status comes from the jobs API
+    for (const id of unfinishedIds()) void resolveFinal(id)
+  })
+}
+
+async function runStream(ids: string[], signal: AbortSignal) {
   try {
-    await streamEvents(jobId, signal, (event) => {
+    await streamEvents(ids, signal, (event) => {
+      const jobId = event.jobId
+      if (!jobId || !useKomfJobs.getState().jobs[jobId]) return
+      if (event.type === 'JobStreamClosedEvent') {
+        // komf closes a job's stream when the job ends, so the final status
+        // comes from the jobs API
+        void resolveFinal(jobId)
+        return
+      }
       switch (event.type) {
         case 'ProviderSeriesEvent':
           updateJob(jobId, { text: `${providerName(event.provider)}…` })
@@ -140,12 +174,13 @@ async function runJob(jobId: string, signal: AbortSignal) {
       }
     })
   } catch {
-    // stream errors fall through to the status check so a dropped connection
-    // does not leave the card spinning
+    // stream errors fall through to the final-status resolution in restartStream
   }
-  if (signal.aborted) return
-  // the stream closes when the job finishes without a completion event, so the
-  // final status comes from the jobs API
+}
+
+async function resolveFinal(jobId: string) {
+  if (resolving.has(jobId)) return
+  resolving.add(jobId)
   try {
     const job = await komfApi.getJob(jobId)
     const recorded = useKomfJobs.getState().jobs[jobId]?.failed ?? null
@@ -155,13 +190,15 @@ async function runJob(jobId: string, signal: AbortSignal) {
     // to whatever the stream told us
     const recorded = useKomfJobs.getState().jobs[jobId]?.failed ?? null
     finishJob(jobId, recorded ?? i18n.t('metadata:identify.matchFailed'))
+  } finally {
+    resolving.delete(jobId)
   }
 }
 
 // the body is read manually because EventSource auto-reconnects when komf closes
 // the stream on completion; a fetch stream just ends
-async function streamEvents(jobId: string, signal: AbortSignal, onEvent: (event: KomfJobEvent) => void) {
-  const res = await fetch(`/api/v1/komf/jobs/${jobId}/events`, {
+async function streamEvents(jobIds: string[], signal: AbortSignal, onEvent: (event: KomfJobEvent) => void) {
+  const res = await fetch(`/api/v1/komf/jobs/events?ids=${jobIds.map(encodeURIComponent).join(',')}`, {
     signal,
     credentials: 'same-origin',
     headers: { 'X-Requested-With': 'XMLHttpRequest' },
