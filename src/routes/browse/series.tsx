@@ -7,6 +7,7 @@ import { librariesApi } from '@/lib/api/libraries'
 import { seriesApi } from '@/lib/api/series'
 import { isAdmin, useAuthStore } from '@/lib/store/auth'
 import { useDocumentTitle } from '@/lib/hooks/useDocumentTitle'
+import { useKomfIntegration } from '@/lib/hooks/useKomfIntegration'
 import { Button } from '@/components/ui/Button'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { HistoryBackButton } from '@/components/ui/BackButton'
@@ -24,6 +25,7 @@ import { SERIES_DEFAULT_SORT, SERIES_FILTER_GROUPS, SERIES_SORT_OPTIONS } from '
 import { cardSelection, useSelection } from '@/components/selection/useSelection'
 import { AlphabetBar } from '@/components/browse/AlphabetBar'
 import { SeriesSelectionBar } from '@/components/browse/SeriesSelectionBar'
+import { LibraryKomfMenu } from '@/components/metadata/LibraryKomfMenu'
 
 export function BrowseSeriesPage() {
   const { t } = useTranslation('browse')
@@ -31,6 +33,7 @@ export function BrowseSeriesPage() {
   const { data: libraries } = useQuery({ queryKey: ['libraries'], queryFn: librariesApi.list })
   const library = libraries?.find((l) => l.id === libraryId)
   const title = libraryId ? (library?.name ?? t('libraryFallback')) : t('series.all')
+  const komfReady = useKomfIntegration()
 
   useDocumentTitle(title)
 
@@ -83,7 +86,10 @@ export function BrowseSeriesPage() {
   return (
     <div>
       <HistoryBackButton to="/dashboard" className="mb-2 -ml-2" />
-      <PageHeader title={title} />
+      <PageHeader
+        title={title}
+        actions={library && komfReady ? <LibraryKomfMenu libraryId={library.id} libraryName={library.name} /> : undefined}
+      />
       <FilterBar
         count={total}
         noun="series"

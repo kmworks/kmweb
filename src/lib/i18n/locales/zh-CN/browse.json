@@ -1,5 +1,14 @@
 {
   "libraryFallback": "库",
+  "library": {
+    "moreActions": "库操作",
+    "matchKomf": "用 komf 匹配全库",
+    "resetKomf": "用 komf 重置全库元数据",
+    "matchQueued": "全库匹配已加入队列",
+    "queueMatchFailed": "无法将全库匹配加入队列",
+    "metadataReset": "全库元数据已重置",
+    "resetMetadataFailed": "无法重置全库元数据"
+  },
   "errorFallback": "出错了。",
   "emptyFilterHint": "试试调整筛选条件。",
   "tryDifferentSearch": "换个关键词试试。",

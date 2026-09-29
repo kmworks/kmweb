@@ -1,5 +1,14 @@
 {
   "libraryFallback": "Library",
+  "library": {
+    "moreActions": "Library actions",
+    "matchKomf": "Match library with komf",
+    "resetKomf": "Reset library metadata with komf",
+    "matchQueued": "Library match queued",
+    "queueMatchFailed": "Could not queue the library match",
+    "metadataReset": "Library metadata reset",
+    "resetMetadataFailed": "Could not reset the library metadata"
+  },
   "errorFallback": "Something went wrong.",
   "emptyFilterHint": "Try adjusting your filters.",
   "tryDifferentSearch": "Try a different search.",
