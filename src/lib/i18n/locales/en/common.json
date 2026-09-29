@@ -12,7 +12,11 @@
     "done": "Done",
     "confirm": "Confirm",
     "search": "Search",
-    "retry": "Retry"
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "download": "Download",
+    "showMore": "More",
+    "showLess": "Less"
   },
   "state": {
     "loading": "Loading…",

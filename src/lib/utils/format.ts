@@ -65,6 +65,16 @@ export function seriesStatusLabel(status?: string): string {
   }
 }
 
+// metadata languages are BCP-47 tags; fall back to the raw tag when Intl can't parse it
+export function languageDisplayName(tag?: string): string {
+  if (!tag) return ''
+  try {
+    return new Intl.DisplayNames([i18n.language], { type: 'language' }).of(tag) ?? tag
+  } catch {
+    return tag
+  }
+}
+
 export function plural(n: number, word: string, words?: string): string {
   return n === 1 ? `${n} ${word}` : `${n} ${words ?? `${word}s`}`
 }
