@@ -69,7 +69,7 @@ export function BrowseBooksPage() {
       <PageHeader title={title} />
       <FilterBar
         count={total}
-        noun={t('noun.books')}
+        noun="books"
         groups={BOOK_FILTER_GROUPS}
         state={filters.state}
         activeCount={activeFilterCount(filters.state)}

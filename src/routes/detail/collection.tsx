@@ -223,7 +223,7 @@ export function CollectionDetailPage() {
         <>
           <FilterBar
             count={seriesTotal}
-            noun={t('filter.nounSeries')}
+            noun="series"
             groups={groups}
             state={filters.state}
             activeCount={activeFilterCount(filters.state)}

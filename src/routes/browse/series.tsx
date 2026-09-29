@@ -85,7 +85,7 @@ export function BrowseSeriesPage() {
       <PageHeader title={title} />
       <FilterBar
         count={total}
-        noun={t('noun.series')}
+        noun="series"
         groups={groups}
         state={filters.state}
         activeCount={activeFilterCount(filters.state)}

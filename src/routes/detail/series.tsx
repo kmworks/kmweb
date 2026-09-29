@@ -372,7 +372,7 @@ export function SeriesDetailPage() {
         <h2 className="mb-4 font-display text-xl font-semibold text-ink">{t('booksHeading')}</h2>
         <FilterBar
           count={booksTotal}
-          noun={t('filter.nounBooks')}
+          noun="books"
           groups={BOOK_FILTER_GROUPS}
           state={filters.state}
           activeCount={activeFilterCount(filters.state)}

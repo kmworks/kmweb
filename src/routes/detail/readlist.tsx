@@ -272,7 +272,7 @@ export function ReadListDetailPage() {
         <>
           <FilterBar
             count={booksTotal}
-            noun={t('filter.nounBooks')}
+            noun="books"
             groups={BOOK_FILTER_GROUPS}
             state={filters.state}
             activeCount={activeFilterCount(filters.state)}
