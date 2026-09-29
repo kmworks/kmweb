@@ -15,6 +15,7 @@ export interface TrackedJob {
 interface KomfJobsState {
   jobs: Record<string, TrackedJob>
   track: (jobId: string, label: string) => void
+  trackMany: (entries: { id: string; label: string }[]) => void
   dismiss: (jobId: string) => void
 }
 
@@ -61,6 +62,17 @@ export const useKomfJobs = create<KomfJobsState>()((set, get) => ({
     restartStream()
   },
 
+  trackMany: (entries) => {
+    const fresh = entries.filter((e) => !get().jobs[e.id])
+    if (fresh.length === 0) return
+    const jobs = { ...get().jobs }
+    for (const e of fresh) {
+      jobs[e.id] = { id: e.id, label: e.label, text: 'Matching…', failed: null, done: false }
+    }
+    set({ jobs })
+    restartStream()
+  },
+
   dismiss: (jobId) => {
     const job = get().jobs[jobId]
     window.clearTimeout(removeTimers.get(jobId))
@@ -73,6 +85,10 @@ export const useKomfJobs = create<KomfJobsState>()((set, get) => ({
 
 export function trackKomfJob(jobId: string, label: string) {
   useKomfJobs.getState().track(jobId, label)
+}
+
+export function trackKomfJobs(entries: { id: string; label: string }[]) {
+  useKomfJobs.getState().trackMany(entries)
 }
 
 function updateJob(jobId: string, patch: Partial<TrackedJob>) {
