@@ -119,7 +119,8 @@
     "searchFailed": "Could not search komf",
     "noResults": "No results",
     "noResultsHint": "Try a different title.",
-    "queueFailed": "Could not queue the identify"
+    "queueFailed": "Could not queue the identify",
+    "matchFailed": "Match failed"
   },
   "reset": {
     "body": "Reset <name>{{name}}</name>? komf removes the metadata it wrote, including field locks and uploaded covers.",

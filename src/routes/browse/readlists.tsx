@@ -15,7 +15,7 @@ import { ReadListCard } from '@/components/media/SeriesCard'
 import { Sentinel } from '@/components/filters/Sentinel'
 
 export function BrowseReadListsPage() {
-  const { t } = useTranslation('browse')
+  const { t, i18n } = useTranslation('browse')
   const { libraryId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const qParam = searchParams.get('q') ?? ''
@@ -68,7 +68,7 @@ export function BrowseReadListsPage() {
         subtitle={
           total !== undefined ? (
             <>
-              <span className="font-mono">{total.toLocaleString()}</span> {t('readlists.count', { count: total })}
+              <span className="font-mono">{total.toLocaleString(i18n.language)}</span> {t('readlists.count', { count: total })}
             </>
           ) : undefined
         }

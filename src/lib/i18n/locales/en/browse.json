@@ -8,10 +8,6 @@
   "bookCount_other": "{{count}} books",
   "seriesCount_one": "{{count}} series",
   "seriesCount_other": "{{count}} series",
-  "noun": {
-    "books": "books",
-    "series": "series"
-  },
   "books": {
     "all": "All books",
     "loadError": "Couldn't load books",

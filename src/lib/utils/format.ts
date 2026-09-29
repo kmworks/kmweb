@@ -74,7 +74,3 @@ export function languageDisplayName(tag?: string): string {
     return tag
   }
 }
-
-export function plural(n: number, word: string, words?: string): string {
-  return n === 1 ? `${n} ${word}` : `${n} ${words ?? `${word}s`}`
-}

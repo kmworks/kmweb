@@ -15,7 +15,7 @@ import { CollectionCard } from '@/components/media/SeriesCard'
 import { Sentinel } from '@/components/filters/Sentinel'
 
 export function BrowseCollectionsPage() {
-  const { t } = useTranslation('browse')
+  const { t, i18n } = useTranslation('browse')
   const { libraryId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const qParam = searchParams.get('q') ?? ''
@@ -68,7 +68,7 @@ export function BrowseCollectionsPage() {
         subtitle={
           total !== undefined ? (
             <>
-              <span className="font-mono">{total.toLocaleString()}</span> {t('collections.count', { count: total })}
+              <span className="font-mono">{total.toLocaleString(i18n.language)}</span> {t('collections.count', { count: total })}
             </>
           ) : undefined
         }

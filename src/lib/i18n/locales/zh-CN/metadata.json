@@ -118,7 +118,8 @@
     "searchFailed": "无法搜索 komf",
     "noResults": "没有结果",
     "noResultsHint": "换个标题试试。",
-    "queueFailed": "无法将识别加入队列"
+    "queueFailed": "无法将识别加入队列",
+    "matchFailed": "匹配失败"
   },
   "reset": {
     "body": "重置<name>{{name}}</name>？komf 会移除它写入的元数据，包括字段锁定和已上传的封面。",

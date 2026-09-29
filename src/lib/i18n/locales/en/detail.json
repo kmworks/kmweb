@@ -86,10 +86,6 @@
     "noBook": "No book",
     "oneshotNoBook": "This oneshot has no book yet."
   },
-  "filter": {
-    "nounBooks": "books",
-    "nounSeries": "series"
-  },
   "confirmDelete": {
     "body": "Delete <name>{{name}}</name>? This cannot be undone."
   },
@@ -103,7 +99,10 @@
   },
   "collection": {
     "renameTitle": "Rename collection",
-    "deleteTitle": "Delete collection"
+    "deleteTitle": "Delete collection",
+    "editMembersEmpty": "A collection needs at least one series. Delete it instead of emptying it.",
+    "selectedSeriesCount_one": "{{count}} selected",
+    "selectedSeriesCount_other": "{{count}} selected"
   },
   "readList": {
     "editTitle": "Edit read list",
@@ -117,10 +116,13 @@
   },
   "picker": {
     "searchPlaceholder": "Search books…",
+    "searchSeriesPlaceholder": "Search series…",
     "noBooksFound": "No books found",
+    "noSeriesFound": "No series found",
     "tryDifferentSearch": "Try a different search.",
     "addedBadge": "Added",
     "pickOne": "Pick one book",
+    "pickOneSeries": "Pick one series",
     "noneSelected": "None selected"
   },
   "editBooks": {

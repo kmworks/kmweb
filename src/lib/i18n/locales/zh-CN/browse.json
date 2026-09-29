@@ -6,10 +6,6 @@
   "namePlaceholder": "名称",
   "bookCount_other": "{{count}} 本书",
   "seriesCount_other": "{{count}} 个系列",
-  "noun": {
-    "books": "本书",
-    "series": "个系列"
-  },
   "books": {
     "all": "全部图书",
     "loadError": "无法加载图书",
