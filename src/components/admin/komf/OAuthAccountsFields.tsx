@@ -21,7 +21,8 @@ export function OAuthAccountsFields() {
   const query = useQuery({
     queryKey: ['admin', 'komf-oauth'],
     retry: false,
-    queryFn: () => Promise.all(OAUTH_PROVIDERS.map((p) => komfApi.oauthStatus(p.id))),
+    queryFn: () =>
+      Promise.all(OAUTH_PROVIDERS.map(async (p) => ({ provider: p, status: await komfApi.oauthStatus(p.id) }))),
   })
   const logout = useMutation({
     mutationFn: (provider: KomfOAuthProvider) => komfApi.oauthLogout(provider),
@@ -52,36 +53,33 @@ export function OAuthAccountsFields() {
       )}
       {query.data && (
         <div className="mt-1">
-          {OAUTH_PROVIDERS.map((p, i) => {
-            const status = query.data[i]
-            return (
-              <FormRow
-                key={p.id}
-                label={p.label}
-                helper={
-                  status.logged_in
-                    ? status.username
-                      ? t('oauth.loggedInAs', { name: status.username })
-                      : t('oauth.loggedIn')
-                    : t('oauth.notLoggedIn')
-                }
-              >
-                {status.logged_in ? (
-                  <Button
-                    size="sm"
-                    loading={logout.isPending && logout.variables === p.id}
-                    onClick={() => logout.mutate(p.id)}
-                  >
-                    {t('oauth.logout')}
-                  </Button>
-                ) : (
-                  <Button size="sm" onClick={() => window.location.assign(komfApi.oauthStartUrl(p.id))}>
-                    {t('oauth.login')}
-                  </Button>
-                )}
-              </FormRow>
-            )
-          })}
+          {query.data.map(({ provider: p, status }) => (
+            <FormRow
+              key={p.id}
+              label={p.label}
+              helper={
+                status.logged_in
+                  ? status.username
+                    ? t('oauth.loggedInAs', { name: status.username })
+                    : t('oauth.loggedIn')
+                  : t('oauth.notLoggedIn')
+              }
+            >
+              {status.logged_in ? (
+                <Button
+                  size="sm"
+                  loading={logout.isPending && logout.variables === p.id}
+                  onClick={() => logout.mutate(p.id)}
+                >
+                  {t('oauth.logout')}
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => window.location.assign(komfApi.oauthStartUrl(p.id))}>
+                  {t('oauth.login')}
+                </Button>
+              )}
+            </FormRow>
+          ))}
         </div>
       )}
     </div>

@@ -23,13 +23,14 @@ export function AdminKomfPage() {
   useDocumentTitle('komf')
 
   // the OAuth callback lands on /?oauth=... and RootRedirect forwards it here
+  // StrictMode double-invokes the landing effect in dev; the ref keeps it to one toast per landing
   const oauthHandled = useRef(false)
   useEffect(() => {
     const oauth = searchParams.get('oauth')
     if (oauth === null || oauthHandled.current) return
     oauthHandled.current = true
     if (oauth === 'success') showToast(t('oauth.success'))
-    else if (oauth === 'error') showToast(searchParams.get('message') ?? t('oauth.error'))
+    else if (oauth === 'error') showToast(searchParams.get('message') || t('oauth.error'))
     const next = new URLSearchParams(searchParams)
     next.delete('oauth')
     next.delete('message')
