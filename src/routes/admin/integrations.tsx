@@ -99,6 +99,7 @@ function IntegrationForm({ integration }: { integration: KomfIntegrationDto }) {
     setAuthKey('')
     setEditing(false)
     connect.reset()
+    clearAuthKey.reset()
   }
 
   // a configured integration shows its saved values read-only; Edit unlocks them so a
@@ -159,6 +160,7 @@ function IntegrationForm({ integration }: { integration: KomfIntegrationDto }) {
           />
           <TextField
             type="password"
+            autoComplete="off"
             label={t('integrations.authKey')}
             helper={t(integration.authKeySet ? 'integrations.authKeyHelperSet' : 'integrations.authKeyHelper')}
             placeholder={integration.authKeySet ? t('integrations.authKeyPlaceholderSet') : undefined}
@@ -170,7 +172,7 @@ function IntegrationForm({ integration }: { integration: KomfIntegrationDto }) {
               integration.authKeySet && !locked ? (
                 <button
                   type="button"
-                  className="text-xs text-ink-3 transition-colors hover:text-danger disabled:opacity-50"
+                  className="cursor-pointer text-xs text-ink-3 transition-colors hover:text-danger disabled:opacity-50"
                   disabled={clearAuthKey.isPending}
                   onClick={() => clearAuthKey.mutate()}
                 >
