@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { actuatorApi } from '@/lib/api/settings'
 import { formatBytes } from '@/lib/utils/format'
 import { Section } from '@/components/account/Section'
+import { metricStat } from '../metric'
 
 interface ContentMetric {
   name: string
@@ -34,7 +35,7 @@ export function ContentCounts() {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
         {METRICS.map((m, i) => {
           const q = results[i]
-          const value = q.data?.measurements.find((x) => x.statistic === 'VALUE')?.value
+          const value = metricStat(q.data, 'VALUE')
           return (
             <div key={m.name}>
               <p className="text-2xl font-semibold text-ink">

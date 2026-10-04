@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { useMutation, useQueries, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwise,
@@ -22,7 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { Tooltip } from '@/components/ui/Tooltip'
-import { metricStat } from '../server/useMetric'
+import { metricStat } from '../metric'
 import { scanIntervalBadgeKey } from './model'
 
 interface LibraryCardProps {
@@ -50,14 +50,9 @@ export function LibraryCard({ library, onEdit, onDelete }: LibraryCardProps) {
 
   const intervalKey = scanIntervalBadgeKey(library.scanInterval)
 
-  const statQueries = useQueries({
-    queries: ['komga.series', 'komga.books', 'komga.books.filesize'].map((name) => ({
-      queryKey: ['admin', 'metric', name, library.id],
-      queryFn: () => actuatorApi.metric(name, [`library:${library.id}`]),
-      refetchInterval: 30_000,
-    })),
-  })
-  const [seriesCount, bookCount, totalSize] = statQueries.map(statValue)
+  const seriesCount = statOrZero(useLibraryMetric('komga.series', library.id))
+  const bookCount = statOrZero(useLibraryMetric('komga.books', library.id))
+  const totalSize = statOrZero(useLibraryMetric('komga.books.filesize', library.id))
   const statsReady = seriesCount !== undefined && bookCount !== undefined && totalSize !== undefined
 
   return (
@@ -141,8 +136,16 @@ function Badge({ children, danger }: { children: ReactNode; danger?: boolean }) 
   )
 }
 
+function useLibraryMetric(name: string, libraryId: string) {
+  return useQuery({
+    queryKey: ['admin', 'metric', name, libraryId],
+    queryFn: () => actuatorApi.metric(name, [`library:${libraryId}`]),
+    refetchInterval: 30_000,
+  })
+}
+
 // the per-library gauges have no rows for an empty library, so the metric 404s instead of reporting 0
-function statValue(q: UseQueryResult<MetricDto>): number | undefined {
+function statOrZero(q: UseQueryResult<MetricDto>): number | undefined {
   const value = metricStat(q.data, 'VALUE')
   if (value !== undefined) return value
   if (q.error instanceof ApiError && q.error.status === 404) return 0
