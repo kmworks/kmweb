@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueries, useQueryClient, type UseQueryResult } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowsClockwise,
@@ -12,13 +12,17 @@ import {
   Trash,
   TrashSimple,
 } from '@phosphor-icons/react'
+import { ApiError } from '@/lib/api/client'
 import { librariesApi } from '@/lib/api/libraries'
-import type { LibraryDto } from '@/lib/api/types'
+import { actuatorApi } from '@/lib/api/settings'
+import type { LibraryDto, MetricDto } from '@/lib/api/types'
 import { cn } from '@/lib/utils/cn'
+import { formatBytes } from '@/lib/utils/format'
 import { Button } from '@/components/ui/Button'
 import { IconButton } from '@/components/ui/IconButton'
 import { Menu, MenuItem, MenuSeparator } from '@/components/ui/Menu'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { metricStat } from '../server/useMetric'
 import { scanIntervalBadgeKey } from './model'
 
 interface LibraryCardProps {
@@ -46,6 +50,16 @@ export function LibraryCard({ library, onEdit, onDelete }: LibraryCardProps) {
 
   const intervalKey = scanIntervalBadgeKey(library.scanInterval)
 
+  const statQueries = useQueries({
+    queries: ['komga.series', 'komga.books', 'komga.books.filesize'].map((name) => ({
+      queryKey: ['admin', 'metric', name, library.id],
+      queryFn: () => actuatorApi.metric(name, [`library:${library.id}`]),
+      refetchInterval: 30_000,
+    })),
+  })
+  const [seriesCount, bookCount, totalSize] = statQueries.map(statValue)
+  const statsReady = seriesCount !== undefined && bookCount !== undefined && totalSize !== undefined
+
   return (
     <div className="flex flex-col rounded-xl border border-line bg-surface p-4 transition-colors hover:border-line-strong">
       <div className="flex items-center justify-between gap-2">
@@ -61,6 +75,15 @@ export function LibraryCard({ library, onEdit, onDelete }: LibraryCardProps) {
           <span className="min-w-0 truncate">{library.root}</span>
         </p>
       </Tooltip>
+      {statsReady && (
+        <p className="mt-1.5 text-xs text-ink-2">
+          {t('libraries.stats.line', {
+            series: t('libraries.stats.series', { count: seriesCount }),
+            books: t('libraries.stats.books', { count: bookCount }),
+            size: formatBytes(totalSize),
+          })}
+        </p>
+      )}
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3">
         <Button size="sm" loading={scan.isPending} disabled={busy} onClick={() => scan.mutate(false)}>
           <Scan className="size-4" />
@@ -116,4 +139,12 @@ function Badge({ children, danger }: { children: ReactNode; danger?: boolean }) 
       {children}
     </span>
   )
+}
+
+// the per-library gauges have no rows for an empty library, so the metric 404s instead of reporting 0
+function statValue(q: UseQueryResult<MetricDto>): number | undefined {
+  const value = metricStat(q.data, 'VALUE')
+  if (value !== undefined) return value
+  if (q.error instanceof ApiError && q.error.status === 404) return 0
+  return undefined
 }
