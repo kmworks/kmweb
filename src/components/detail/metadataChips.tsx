@@ -47,6 +47,18 @@ export function tagChipItems(tags: string[], base: '/series' | '/books'): Detail
   }))
 }
 
+/** Series tags first (sorted), then book-only tags (sorted) dimmed — mirrors the upstream series detail tag row */
+export function combinedTagChipItems(seriesTags: string[], bookTags: string[], base: '/series' | '/books'): DetailChipItem[] {
+  const series = [...new Set(seriesTags.filter(Boolean))].sort()
+  const bookOnly = [...new Set(bookTags.filter(Boolean))]
+    .filter((t) => !series.includes(t))
+    .sort()
+  return [
+    ...series.map((t) => ({ key: `tag-${t}`, label: t, icon: <Tag className={iconCls} />, to: `${base}?tags=${encodeURIComponent(t)}` })),
+    ...bookOnly.map((t) => ({ key: `tag-${t}`, label: t, icon: <Tag className={iconCls} />, to: `${base}?tags=${encodeURIComponent(t)}`, dimmed: true })),
+  ]
+}
+
 export function sharingLabelChipItems(labels: string[]): DetailChipItem[] {
   return labels.map((s) => ({ key: `sharing-${s}`, label: s, icon: <UsersThree className={iconCls} /> }))
 }

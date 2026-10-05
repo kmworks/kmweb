@@ -51,7 +51,7 @@ import { DetailSkeleton } from '@/components/detail/DetailSkeleton'
 import { DetailError } from '@/components/detail/DetailError'
 import { DetailChipFlow } from '@/components/detail/DetailChipFlow'
 import { SeriesMetaLine } from '@/components/detail/SeriesMetaLine'
-import { creatorChipItems, genreChipItems, sharingLabelChipItems, tagChipItems } from '@/components/detail/metadataChips'
+import { combinedTagChipItems, creatorChipItems, genreChipItems, sharingLabelChipItems } from '@/components/detail/metadataChips'
 import { Summary } from '@/components/detail/Summary'
 import { DownloadLink } from '@/components/detail/DownloadLink'
 import { AddToCollectionDialog } from '@/components/browse/AddToCollectionDialog'
@@ -206,7 +206,7 @@ export function SeriesDetailPage() {
 
   const creatorItems = creatorChipItems(md.publisher, series.booksMetadata.authors, '/series')
   const genreItems = genreChipItems(md.genres)
-  const tagItems = tagChipItems(md.tags, '/series')
+  const tagItems = combinedTagChipItems(md.tags, series.booksMetadata.tags, '/series')
   const sharingItems = sharingLabelChipItems(md.sharingLabels)
   const hasMetadataFlows = genreItems.length + tagItems.length + sharingItems.length > 0
 
