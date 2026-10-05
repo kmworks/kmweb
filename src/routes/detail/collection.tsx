@@ -99,7 +99,8 @@ export function CollectionDetailPage() {
   const [addSeriesOpen, setAddSeriesOpen] = useState(false)
   const [postersOpen, setPostersOpen] = useState(false)
 
-  const filters = useBrowseFilters()
+  // first-letter navigation is a browse-page affordance, not useful inside a collection
+  const filters = useBrowseFilters(['letter'])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const hasFilters = activeFilterCount(filters.state) > 0 || !!filters.state.q.trim()
   // first-letter navigation is a browse-page affordance, not useful inside a collection
@@ -278,6 +279,7 @@ export function CollectionDetailPage() {
         onClose={() => setDrawerOpen(false)}
         groups={groups}
         state={filters.state}
+        scope={{ collectionId }}
         activeCount={activeFilterCount(filters.state)}
         onToggleValue={filters.toggleValue}
         onToggleAuthor={filters.toggleAuthor}

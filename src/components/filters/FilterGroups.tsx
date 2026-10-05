@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { CaretRight, CheckCircle, Circle, X, XCircle } from '@phosphor-icons/react'
-import { referentialApi } from '@/lib/api/referential'
+import { referentialApi, type ReferentialScope } from '@/lib/api/referential'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { cn } from '@/lib/utils/cn'
@@ -73,25 +73,24 @@ function LoadError({ onRetry }: { onRetry: () => void }) {
   )
 }
 
-function fetchReferential(kind: ReferentialKind, libraryId?: string): Promise<string[]> {
-  const lib = libraryId ? [libraryId] : undefined
+function fetchReferential(kind: ReferentialKind, scope?: ReferentialScope): Promise<string[]> {
   switch (kind) {
     case 'publishers':
-      return referentialApi.publishers({ libraryId: lib })
+      return referentialApi.publishers(scope)
     case 'genres':
-      return referentialApi.genres({ libraryId: lib })
-    case 'seriesTags':
-      return referentialApi.seriesTags({ libraryId: lib })
+      return referentialApi.genres(scope)
+    case 'tags':
+      return referentialApi.tags(scope)
     case 'bookTags':
-      return referentialApi.bookTags({ libraryId: lib })
+      return referentialApi.bookTags(scope)
     case 'sharingLabels':
-      return referentialApi.sharingLabels({ libraryId: lib })
+      return referentialApi.sharingLabels(scope)
     case 'ageRatings':
-      return referentialApi.ageRatings({ libraryId: lib })
+      return referentialApi.ageRatings(scope)
     case 'languages':
-      return referentialApi.languages({ libraryId: lib })
+      return referentialApi.languages(scope)
     case 'releaseDates':
-      return referentialApi.releaseDates({ libraryId: lib })
+      return referentialApi.releaseDates(scope)
   }
 }
 
@@ -110,13 +109,13 @@ function sortReferential(kind: ReferentialKind, values: string[], locale: string
 
 function ReferentialOptions({
   kind,
-  libraryId,
+  scope,
   selected,
   enabled,
   onToggle,
 }: {
   kind: ReferentialKind
-  libraryId?: string
+  scope?: ReferentialScope
   selected: string[]
   enabled: boolean
   onToggle: (value: string) => void
@@ -124,8 +123,8 @@ function ReferentialOptions({
   const [filter, setFilter] = useState('')
   const { t, i18n } = useTranslation('filters')
   const query = useQuery({
-    queryKey: ['referential', kind, libraryId ?? 'all'],
-    queryFn: () => fetchReferential(kind, libraryId),
+    queryKey: ['referential', kind, scope],
+    queryFn: () => fetchReferential(kind, scope),
     enabled,
     staleTime: 60_000,
   })
@@ -185,12 +184,12 @@ function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (
 }
 
 function AuthorsOptions({
-  libraryId,
+  scope,
   selected,
   enabled,
   onToggle,
 }: {
-  libraryId?: string
+  scope?: ReferentialScope
   selected: AuthorFilter[]
   enabled: boolean
   onToggle: (author: AuthorFilter) => void
@@ -199,8 +198,8 @@ function AuthorsOptions({
   const { t } = useTranslation('filters')
   const debounced = useDebouncedValue(text, 300)
   const query = useQuery({
-    queryKey: ['referential', 'authors', libraryId ?? 'all', debounced],
-    queryFn: () => referentialApi.authors({ libraryId, search: debounced.trim() || undefined }),
+    queryKey: ['referential', 'authors', scope, debounced],
+    queryFn: () => referentialApi.authors({ ...scope, search: debounced.trim() || undefined }),
     enabled,
     staleTime: 30_000,
   })
@@ -358,7 +357,7 @@ export function FilterGroupRow({ def, state, onOpen }: { def: FilterGroupDef; st
 interface DetailProps {
   def: FilterGroupDef
   state: FilterState
-  libraryId?: string
+  scope?: ReferentialScope
   enabled: boolean
   onToggleValue: (key: GroupKey, value: string) => void
   onToggleAuthor: (author: AuthorFilter) => void
@@ -371,7 +370,7 @@ interface DetailProps {
 export function FilterGroupDetail({
   def,
   state,
-  libraryId,
+  scope,
   enabled,
   onToggleValue,
   onToggleAuthor,
@@ -386,7 +385,7 @@ export function FilterGroupDetail({
       {def.kind === 'referential' && def.referential && (
         <ReferentialOptions
           kind={def.referential}
-          libraryId={libraryId}
+          scope={scope}
           selected={values}
           enabled={enabled}
           onToggle={(v) => onToggleValue(def.key, v)}
@@ -394,7 +393,7 @@ export function FilterGroupDetail({
       )}
       {def.kind === 'letters' && <LetterOptions selected={values} onSelect={(l) => onSetExclusive(def.key, l)} />}
       {def.kind === 'authors' && (
-        <AuthorsOptions libraryId={libraryId} selected={state.authors} enabled={enabled} onToggle={onToggleAuthor} />
+        <AuthorsOptions scope={scope} selected={state.authors} enabled={enabled} onToggle={onToggleAuthor} />
       )}
     </div>
   )
