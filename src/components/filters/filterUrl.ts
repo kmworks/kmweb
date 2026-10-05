@@ -98,7 +98,7 @@ export interface ActiveFilterItem {
   value: string
 }
 
-/** display text for a filter value: the age-rating unset sentinel is translated, everything else shows raw */
+// the sentinel is an English token baked into bookmarked URLs, so it has to go through i18n at display time
 export function displayFilterValue(key: string, v: string): string {
   return key === 'ageRatings' && v === AGE_RATING_UNSET ? i18n.t('filters:option.ageRating.unset') : v
 }
