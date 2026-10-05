@@ -6,7 +6,6 @@ import { referentialApi, type ReferentialScope } from '@/lib/api/referential'
 import { Skeleton } from '@/components/ui/Skeleton'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { cn } from '@/lib/utils/cn'
-import { useDebouncedValue } from './useDebouncedValue'
 import { groupSelectedCount } from './filterUrl'
 import { LETTERS, type AuthorFilter, type FilterGroupDef, type FilterState, type GroupKey, type GroupMode, type ReferentialKind } from './types'
 
@@ -159,8 +158,6 @@ function ReferentialOptions({
   )
 }
 
-const AUTHOR_RESULTS_LIMIT = 60
-
 function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (letter: string) => void }) {
   const active = selected[0]
   return (
@@ -183,6 +180,10 @@ function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (
   )
 }
 
+function authorLabel(a: AuthorFilter): string {
+  return a.role ? `${a.name} (${a.role})` : a.name
+}
+
 function AuthorsOptions({
   scope,
   selected,
@@ -194,46 +195,49 @@ function AuthorsOptions({
   enabled: boolean
   onToggle: (author: AuthorFilter) => void
 }) {
-  const [text, setText] = useState('')
-  const { t } = useTranslation('filters')
-  const debounced = useDebouncedValue(text, 300)
+  const [filter, setFilter] = useState('')
+  const { t, i18n } = useTranslation('filters')
   const query = useQuery({
-    queryKey: ['referential', 'authors', scope, debounced],
-    queryFn: () => referentialApi.authors({ ...scope, search: debounced.trim() || undefined }),
+    queryKey: ['referential', 'authors', scope],
+    queryFn: () => referentialApi.authors(scope),
     enabled,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
-  const results = (query.data ?? []).filter((a) => !selected.some((s) => s.name === a.name && s.role === a.role))
-  const shown = results.slice(0, AUTHOR_RESULTS_LIMIT)
+  const same = (a: AuthorFilter, b: AuthorFilter) => a.name === b.name && a.role === b.role
+  const options = useMemo(() => {
+    const arr = [...(query.data ?? [])]
+    arr.sort((a, b) => authorLabel(a).localeCompare(authorLabel(b), i18n.language))
+    return arr
+  }, [query.data, i18n.language])
+  const visible = useMemo(() => {
+    const f = filter.trim().toLowerCase()
+    // selected values stay visible so they can be deselected while filtering
+    return options.filter((o) => selected.some((s) => same(o, s)) || !f || authorLabel(o).toLowerCase().includes(f))
+  }, [options, filter, selected])
 
   return (
     <div>
-      {selected.length > 0 && (
-        <div className="mb-2 flex flex-wrap gap-1.5">
-          {selected.map((a) => (
-            <OptionChip key={`${a.name},${a.role}`} active onClick={() => onToggle(a)}>
-              {a.role ? `${a.name} (${a.role})` : a.name}
-              <X className="size-3" />
-            </OptionChip>
-          ))}
-        </div>
+      {options.length > GROUP_SEARCH_THRESHOLD && (
+        <GroupSearchInput value={filter} onChange={setFilter} placeholder={t('authors.searchPlaceholder')} />
       )}
-      <GroupSearchInput value={text} onChange={setText} placeholder={t('authors.searchPlaceholder')} />
       {query.isPending ? (
         <LoadingChips />
       ) : query.isLoadingError ? (
         <LoadError onRetry={() => query.refetch()} />
-      ) : shown.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="text-xs text-ink-3">{t('authors.noMatch')}</p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
-          {shown.map((a) => (
-            <OptionChip key={`${a.name},${a.role}`} active={false} onClick={() => onToggle({ name: a.name, role: a.role })}>
-              {a.role ? `${a.name} (${a.role})` : a.name}
-            </OptionChip>
-          ))}
-          {results.length > shown.length && <span className="self-center text-xs text-ink-3">{t('authors.moreHint')}</span>}
+          {visible.map((a) => {
+            const active = selected.some((s) => same(a, s))
+            return (
+              <OptionChip key={`${a.name},${a.role}`} active={active} onClick={() => onToggle({ name: a.name, role: a.role })}>
+                {authorLabel(a)}
+                {active && <X className="size-3" />}
+              </OptionChip>
+            )
+          })}
         </div>
       )}
     </div>
