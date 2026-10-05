@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
@@ -110,24 +110,12 @@ export function KomfConfigForm({ config, libraries }: { config: KomfConfig; libr
 
   const [searchParams, setSearchParams] = useSearchParams()
   const tab = tabFromParam(searchParams.get('tab'))
-  const tabBarRef = useRef<HTMLDivElement>(null)
-  const tabBarTop = useRef<number | null>(null)
-
-  useEffect(() => {
-    const el = tabBarRef.current
-    if (el) tabBarTop.current = el.getBoundingClientRect().top + window.scrollY
-  }, [])
 
   const setTab = (id: KomfTabId) => {
     if (id === tab) return
     const next = new URLSearchParams(searchParams)
     next.set('tab', id)
     setSearchParams(next)
-    // after the swap the new tab can be shorter than the scroll position; pull back to the pinned bar
-    if (tabBarTop.current !== null) {
-      const target = tabBarTop.current - 60
-      if (window.scrollY > target) window.scrollTo({ top: target })
-    }
   }
 
   const tabErrors: Record<KomfTabId, boolean> = {
@@ -142,7 +130,7 @@ export function KomfConfigForm({ config, libraries }: { config: KomfConfig; libr
 
   return (
     <div className="space-y-6">
-      <div ref={tabBarRef} className="sticky top-15 z-10 bg-bg/80 backdrop-blur-md">
+      <div className="sticky top-15 z-10 bg-bg/80 backdrop-blur-md">
         <TabBar
           tabs={KOMF_TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey), hasError: tabErrors[tab.id] }))}
           active={tab}
