@@ -99,7 +99,6 @@ export function CollectionDetailPage() {
   const [addSeriesOpen, setAddSeriesOpen] = useState(false)
   const [postersOpen, setPostersOpen] = useState(false)
 
-  // first-letter navigation is a browse-page affordance, not useful inside a collection
   const filters = useBrowseFilters(['letter'])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const hasFilters = activeFilterCount(filters.state) > 0 || !!filters.state.q.trim()
