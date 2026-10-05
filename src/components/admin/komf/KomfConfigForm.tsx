@@ -130,7 +130,7 @@ export function KomfConfigForm({ config, libraries }: { config: KomfConfig; libr
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-15 z-10 bg-bg/80 backdrop-blur-md">
+      <div className="sticky top-[calc(var(--spacing)*15+env(safe-area-inset-top))] z-10 bg-bg/80 backdrop-blur-md">
         <TabBar
           tabs={KOMF_TABS.map((tab) => ({ id: tab.id, label: t(tab.labelKey), hasError: tabErrors[tab.id] }))}
           active={tab}
@@ -240,7 +240,7 @@ export function KomfConfigForm({ config, libraries }: { config: KomfConfig; libr
 
       <AnimatePresence>
         {dirtyCount > 0 && (
-          <div className="pointer-events-none fixed inset-x-0 bottom-6 z-20 flex justify-center px-4">
+          <div className="pointer-events-none fixed inset-x-0 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-20 flex justify-center px-4">
             <motion.div
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}

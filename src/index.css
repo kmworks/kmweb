@@ -163,6 +163,14 @@ html:lang(zh-Hant) {
     background-image: var(--brand-gradient);
   }
 
+  /* standalone display (viewport-fit=cover) draws under the system status bar / home indicator */
+  .safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .cover-aspect {
     aspect-ratio: 0.7071;
   }
