@@ -221,6 +221,13 @@ html:lang(zh-Hant) {
     animation: card-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
 
+  /* on back/forward navigation the whole grid remounts at once and replaying every
+     card's entrance reads as a flash; the mark lasts for the whole location, so late
+     arrivals (infinite scroll, SSE inserts) on a POP-arrived page skip it too */
+  [data-pop-navigation] .animate-card-in {
+    animation: none;
+  }
+
   /* replayed on badge value changes via key remount */
   @keyframes badge-pop {
     from {
