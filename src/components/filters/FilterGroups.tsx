@@ -130,8 +130,9 @@ function ReferentialOptions({
 
   const options = useMemo(() => {
     const sorted = sortReferential(kind, query.data ?? [], i18n.language)
-    // the v2 endpoint drops NULL age ratings, so the unset value is offered as a fixed option
-    return kind === 'ageRatings' ? [...sorted, AGE_RATING_UNSET] : sorted
+    // the v2 endpoint drops NULL age ratings, so the unset value is offered as a fixed option,
+    // listed first like the v1 endpoint served it
+    return kind === 'ageRatings' ? [AGE_RATING_UNSET, ...sorted] : sorted
   }, [kind, query.data, i18n.language])
   const visible = useMemo(() => {
     const f = filter.trim().toLowerCase()
