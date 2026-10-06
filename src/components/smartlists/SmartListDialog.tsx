@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { CaretLeft, CaretRight, CircleNotch, WarningCircle } from '@phosphor-icons/react'
@@ -137,12 +137,18 @@ export function SmartListDialog({
     () => (target === 'BOOK' ? buildBookSearch(filters.state) : buildSeriesSearch(filters.state)),
     [filters.state, target],
   )
+  // debounced so the match count does not fire a request per keystroke
+  const [debouncedSearch, setDebouncedSearch] = useState(previewSearch)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(previewSearch), 300)
+    return () => clearTimeout(t)
+  }, [previewSearch])
   const preview = useQuery({
-    queryKey: ['smart-lists', 'preview', target, JSON.stringify(previewSearch)],
+    queryKey: ['smart-lists', 'preview', target, JSON.stringify(debouncedSearch)],
     queryFn: (): Promise<Page<BookDto | SeriesDto>> =>
       target === 'BOOK'
-        ? booksApi.list({ search: previewSearch, page: 0, size: 1 })
-        : seriesApi.list({ search: previewSearch, page: 0, size: 1 }),
+        ? booksApi.list({ search: debouncedSearch, page: 0, size: 1 })
+        : seriesApi.list({ search: debouncedSearch, page: 0, size: 1 }),
     enabled: open && step === 2,
     placeholderData: keepPreviousData,
     staleTime: 5_000,
