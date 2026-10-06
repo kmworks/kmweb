@@ -13,7 +13,7 @@
       "line": "{{series}} · {{books}} · {{size}} · {{sidecars}}",
       "series_other": "시리즈 {{count}}개",
       "books_other": "책 {{count}}권",
-      "sidecars_other": "{{count}} 사이드카"
+      "sidecars_other": "사이드카 {{count}}개"
     },
     "general": "일반",
     "generalHint": "나머지는 서버 기본값을 사용합니다.",

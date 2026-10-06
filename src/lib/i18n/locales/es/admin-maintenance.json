@@ -20,7 +20,8 @@
       "books_many": "{{count}} libros",
       "books_other": "{{count}} libros",
       "sidecars_one": "{{count}} sidecar",
-      "sidecars_other": "{{count}} sidecar"
+      "sidecars_many": "{{count}} sidecars",
+      "sidecars_other": "{{count}} sidecars"
     },
     "general": "General",
     "generalHint": "Todo lo demás usa los valores predeterminados del servidor.",

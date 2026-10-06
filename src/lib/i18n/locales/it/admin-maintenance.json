@@ -20,6 +20,7 @@
       "books_many": "{{count}} libri",
       "books_other": "{{count}} libri",
       "sidecars_one": "{{count}} sidecar",
+      "sidecars_many": "{{count}} sidecar",
       "sidecars_other": "{{count}} sidecar"
     },
     "general": "Generale",
