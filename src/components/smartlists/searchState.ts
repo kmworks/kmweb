@@ -308,6 +308,7 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
     }
   }
 
+  const seenSingleKeys = new Set<string>()
   for (const branch of branches) {
     const year = yearFromBranch(branch)
     if (year !== undefined) {
@@ -316,6 +317,10 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
     }
     const single = leafKeyAndOp(branch)
     if (single) {
+      // the builder wraps multi-value groups, so a repeated bare key means a hand-crafted
+      // same-key run — parsing it as match-any would silently change AND into OR
+      if (seenSingleKeys.has(single[0])) lossy = true
+      seenSingleKeys.add(single[0])
       if (!absorbLeaf(single[0], single[1])) lossy = true
       continue
     }
