@@ -231,7 +231,8 @@ export function EntityOptions({
   )
 }
 
-function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (letter: string) => void }) {  const active = selected[0]
+function LetterOptions({ selected, onSelect }: { selected: string[]; onSelect: (letter: string) => void }) {
+  const active = selected[0]
   return (
     <div className="flex flex-wrap gap-1">
       {[...LETTERS, '#'].map((l) => (

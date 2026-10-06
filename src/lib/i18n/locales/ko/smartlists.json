@@ -11,7 +11,6 @@
     "book": "도서",
     "series": "시리즈"
   },
-  "editFilters": "필터 편집",
   "filtersEmpty": "필터 없음 — 모두 일치",
   "filtersActive_other": "{{count, number}}개의 필터 활성화됨",
   "filtersStepTitle": "필터",

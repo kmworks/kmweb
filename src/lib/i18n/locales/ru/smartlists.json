@@ -11,7 +11,6 @@
     "book": "Книги",
     "series": "Серии"
   },
-  "editFilters": "Изменить фильтры",
   "filtersEmpty": "Без фильтров — совпадает со всем",
   "filtersActive_one": "{{count, number}} фильтр активен",
   "filtersActive_few": "{{count, number}} фильтра активно",

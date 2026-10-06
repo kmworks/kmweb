@@ -11,7 +11,6 @@
     "book": "圖書",
     "series": "系列"
   },
-  "editFilters": "編輯篩選條件",
   "filtersEmpty": "無條件 — 符合全部內容",
   "filtersActive_other": "已啟用 {{count, number}} 個篩選條件",
   "filtersStepTitle": "篩選條件",

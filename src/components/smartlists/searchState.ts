@@ -32,7 +32,8 @@ export function emptyFilterState(): FilterState {
   }
 }
 
-/** same callback surface as useBrowseFilters, but over a useState value (dialog-local) */export function useFilterStateState(initial: FilterState = emptyFilterState()) {
+/** same callback surface as useBrowseFilters, but over a useState value (dialog-local) */
+export function useFilterState(initial: FilterState = emptyFilterState()) {
   const [state, setState] = useState(initial)
 
   const toggleIn = useCallback((key: GroupKey, value: string) => {
@@ -123,8 +124,8 @@ function yearFromBranch(branch: SearchCondition): string | undefined {
   if (!after || !before) return undefined
   const m = /^(\d{4})-(\d{2})-(\d{2})T/.exec(after)
   if (!m) return undefined
-  const year = Number(m[1])
-  // the bounds sit just outside the year; accept only the canonical pair
+  // the after bound is Dec 31 of the previous year, the before bound Jan 1 of the next
+  const year = Number(m[1]) + 1
   const expected = `${year - 1}-12-31T00:00:00Z`
   const expectedBefore = `${year + 1}-01-01T00:00:00Z`
   if (!after.startsWith(expected) || !before.startsWith(expectedBefore)) return undefined
@@ -136,6 +137,42 @@ interface Bucket {
   /** isNot seen on any leaf: the whole group becomes negated */
   negated: boolean
   mode: GroupMode
+}
+
+/** the filter group a condition key feeds, or undefined when the editor has no such group;
+    membership leaves only exist on their target's side (collections hold series, read lists hold books) */
+function groupKeyForCondition(key: string, target: SmartListTarget): GroupKey | undefined {
+  switch (key) {
+    case 'readStatus':
+    case 'seriesStatus':
+    case 'complete':
+    case 'deleted':
+    case 'ageRating':
+    case 'mediaProfile':
+    case 'mediaStatus':
+    case 'poster':
+      return { readStatus: 'readStatus', seriesStatus: 'seriesStatus', complete: 'complete', deleted: 'deleted', ageRating: 'ageRatings', mediaProfile: 'mediaProfiles', mediaStatus: 'mediaStatuses', poster: 'poster' }[key] as GroupKey
+    case 'oneShot':
+      return 'oneshot'
+    case 'titleSort':
+      return 'letter'
+    case 'publisher':
+    case 'genre':
+    case 'tag':
+    case 'sharingLabel':
+    case 'language':
+      return { publisher: 'publishers', genre: 'genres', tag: 'tags', sharingLabel: 'sharingLabels', language: 'languages' }[key] as GroupKey
+    case 'author':
+      return 'authors'
+    case 'libraryId':
+      return 'libraries'
+    case 'readListId':
+      return target === 'BOOK' ? 'readlists' : undefined
+    case 'collectionId':
+      return target === 'SERIES' ? 'collections' : undefined
+    default:
+      return undefined
+  }
 }
 
 /**
@@ -160,13 +197,19 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
   }
 
   const absorbLeaf = (key: string, op: LeafOp): boolean => {
+    // a group is uniformly is or isNot; a mixed leaf would silently flip the whole group's semantics
+    const absorbIsValue = (group: GroupKey, value: string, isNot: boolean): boolean => {
+      const b = bucket(group)
+      if (b.values.length > 0 && b.negated !== isNot) return false
+      if (isNot) b.negated = true
+      b.values.push(value)
+      return true
+    }
     switch (key) {
       case 'readStatus':
         if (op.operator !== 'is' && op.operator !== 'isNot') return false
         if (op.value !== 'READ' && op.value !== 'UNREAD' && op.value !== 'IN_PROGRESS') return false
-        bucket('readStatus').values.push(op.value as string)
-        if (op.operator === 'isNot') bucket('readStatus').negated = true
-        return true
+        return absorbIsValue('readStatus', op.value as string, op.operator === 'isNot')
       case 'seriesStatus':
         if (op.operator !== 'is' || typeof op.value !== 'string') return false
         if (!['ONGOING', 'ENDED', 'ABANDONED', 'HIATUS'].includes(op.value)) return false
@@ -191,10 +234,9 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
       case 'language': {
         if (op.operator !== 'is' && op.operator !== 'isNot') return false
         if (typeof op.value !== 'string') return false
-        const group = { publisher: 'publishers', genre: 'genres', tag: 'tags', sharingLabel: 'sharingLabels', language: 'languages' }[key] as GroupKey
-        bucket(group).values.push(op.value)
-        if (op.operator === 'isNot') bucket(group).negated = true
-        return true
+        const group = groupKeyForCondition(key, target)
+        if (!group) return false
+        return absorbIsValue(group, op.value, op.operator === 'isNot')
       }
       case 'ageRating':
         if (op.operator === 'isNull') {
@@ -226,6 +268,8 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
         const a = op.value as { name?: unknown; role?: unknown }
         if (typeof a.name !== 'string') return false
         state.authors.push({ name: a.name, role: typeof a.role === 'string' ? a.role : '' })
+        // marker for mode-conflict detection; state.authors carries the real values
+        bucket('authors').values.push(a.name)
         return true
       }
       case 'libraryId':
@@ -233,12 +277,9 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
       case 'collectionId': {
         if (op.operator !== 'is' && op.operator !== 'isNot') return false
         if (typeof op.value !== 'string') return false
-        const group = { libraryId: 'libraries', readListId: 'readlists', collectionId: 'collections' }[key] as GroupKey
-        // membership leaves only exist on their target's side (collections hold series, read lists hold books)
-        if ((target === 'BOOK' && key === 'collectionId') || (target === 'SERIES' && key === 'readListId')) return false
-        bucket(group).values.push(op.value)
-        if (op.operator === 'isNot') bucket(group).negated = true
-        return true
+        const group = groupKeyForCondition(key, target)
+        if (!group) return false
+        return absorbIsValue(group, op.value, op.operator === 'isNot')
       }
       default:
         return false
@@ -246,8 +287,26 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
   }
 
   const condition = search.condition as ConditionGroup | ConditionLeaf | undefined
-  const groupBranches = condition && ('allOf' in condition || 'anyOf' in condition)
-  const branches: SearchCondition[] = !condition ? [] : groupBranches ? ((condition as ConditionGroup).allOf ?? (condition as ConditionGroup).anyOf ?? []) : [condition as SearchCondition]
+  // a single-group document is the group's own shape, not a container of branches:
+  // the whole condition is one canonical year pair, an anyOf/allOf of same-key leaves
+  // (match-any/match-all group), or an anyOf/allOf run of year pairs
+  let branches: SearchCondition[] = []
+  if (condition) {
+    if (yearFromBranch(condition) !== undefined) {
+      branches = [condition as SearchCondition]
+    } else {
+      const members = (condition as ConditionGroup).allOf ?? (condition as ConditionGroup).anyOf
+      if (Array.isArray(members) && members.length > 0) {
+        const leafKeys = members.map((m) => leafKeyAndOp(m)?.[0])
+        const singleGroup =
+          leafKeys.every((k) => k !== undefined && k === leafKeys[0]) ||
+          members.every((m) => yearFromBranch(m) !== undefined)
+        branches = singleGroup ? [condition as SearchCondition] : members
+      } else {
+        branches = [condition as SearchCondition]
+      }
+    }
+  }
 
   for (const branch of branches) {
     const year = yearFromBranch(branch)
@@ -266,14 +325,29 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
       lossy = true
       continue
     }
+    const mode: GroupMode = 'allOf' in branch ? 'all' : 'any'
+    // a run of canonical release-year pairs is the release-year group
+    const years = group.map(yearFromBranch)
+    if (years.every((y) => y !== undefined)) {
+      const b = bucket('releaseYears')
+      if (b.values.length > 0 && b.mode !== mode) lossy = true
+      b.mode = mode
+      for (const y of years as string[]) b.values.push(y)
+      continue
+    }
     const leaves = group.map(leafKeyAndOp)
     const key = leaves[0]?.[0]
     if (!key || leaves.some((l) => !l || l[0] !== key)) {
       lossy = true
       continue
     }
-    const mode: GroupMode = 'allOf' in branch ? 'all' : 'any'
-    const b = bucket(key as GroupKey)
+    // mode and values must land on the same group: bucket through the mapping absorbLeaf uses
+    const groupKey = groupKeyForCondition(key, target)
+    if (!groupKey) {
+      lossy = true
+      continue
+    }
+    const b = bucket(groupKey)
     if (b.values.length > 0 && b.mode !== mode) lossy = true
     b.mode = mode
     for (const [, op] of leaves as [string, LeafOp][]) {
@@ -282,7 +356,8 @@ export function searchToFilterState(search: BookSearch | SeriesSearch, target: S
   }
 
   for (const [key, b] of buckets) {
-    ;(state[key] as string[]) = [...new Set(b.values)]
+    // authors are structured objects already collected in state.authors; the bucket only tracks the mode
+    if (key !== 'authors') (state[key] as string[]) = [...new Set(b.values)]
     if (b.negated) state.exclude = [...state.exclude, key]
     if (b.mode === 'all') state.matchAll = [...state.matchAll, key]
   }

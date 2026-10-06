@@ -64,7 +64,11 @@ function SmartListContent({ list, isBook }: { list: SmartListDto; isBook: boolea
   const sort = useSortState(isBook ? 'books:smartlist' : 'series:smartlist', isBook ? BOOK_DEFAULT_SORT : SERIES_DEFAULT_SORT)
   const sortParam = serializeSort(sort.current)
   const filterKey = serializeFilters(filters.state)
-  const groups = useMemo(() => (isBook ? BOOK_FILTER_GROUPS : SERIES_FILTER_GROUPS), [isBook])
+  const admin = isAdmin(user)
+  const groups = useMemo(
+    () => (isBook ? BOOK_FILTER_GROUPS : SERIES_FILTER_GROUPS).filter((g) => !g.adminOnly || admin),
+    [isBook, admin],
+  )
 
   const itemsQuery = useInfiniteQuery({
     queryKey: ['smart-lists', list.id, 'items', filterKey, sortParam],
@@ -106,8 +110,9 @@ function SmartListContent({ list, isBook }: { list: SmartListDto; isBook: boolea
 
   const items = itemsQuery.data?.pages.flatMap((p) => p.content) ?? []
   const total = itemsQuery.data?.pages[0]?.totalElements
-  // admins manage every list, matching what the API allows
-  const canManage = isAdmin(user) || isOwner(user, list.ownerId)
+  // edit/delete are owner-or-admin, matching the API; cover uploads stay owner-only there
+  const own = isOwner(user, list.ownerId)
+  const canManage = own || admin
   const continueTarget = continueQuery.data
   const continueRoute = continueTarget ? readRoute(continueTarget) : null
 
@@ -149,9 +154,11 @@ function SmartListContent({ list, isBook }: { list: SmartListDto; isBook: boolea
                   </IconButton>
                 }
               >
-                <MenuItem onSelect={() => setPostersOpen(true)}>
-                  <Image className="size-4" /> {t('managePosters')}
-                </MenuItem>
+                {own && (
+                  <MenuItem onSelect={() => setPostersOpen(true)}>
+                    <Image className="size-4" /> {t('managePosters')}
+                  </MenuItem>
+                )}
                 <MenuItem onSelect={() => setEditOpen(true)}>
                   <PencilSimple className="size-4" /> {t('common:action.edit')}
                 </MenuItem>

@@ -11,7 +11,6 @@
     "book": "图书",
     "series": "系列"
   },
-  "editFilters": "编辑筛选条件",
   "filtersEmpty": "无条件 — 匹配全部内容",
   "filtersActive_other": "已启用 {{count, number}} 个筛选条件",
   "filtersStepTitle": "筛选条件",

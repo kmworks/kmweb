@@ -26,7 +26,7 @@ import {
   type FilterState,
   type GroupKey,
 } from '@/components/filters/types'
-import { emptyFilterState, searchToFilterState, useFilterStateState } from './searchState'
+import { emptyFilterState, searchToFilterState, useFilterState } from './searchState'
 
 interface EntityName {
   id: string
@@ -74,7 +74,7 @@ export function SmartListDialog({
     () => (existing ? searchToFilterState(existing.search, existing.target) : { state: emptyFilterState(), lossy: false }),
     [existing],
   )
-  const filters = useFilterStateState(parsed.state)
+  const filters = useFilterState(parsed.state)
 
   if (useChanged([open, existing?.id, existing?.lastModifiedDate]) && open) {
     setStep(1)
@@ -92,6 +92,8 @@ export function SmartListDialog({
   const shareTargets = useQuery({
     queryKey: ['smart-lists', 'share-targets'],
     queryFn: () => smartListsApi.shareTargets(),
+    // the directory is admin-only on the server; others always create private lists
+    enabled: admin,
     staleTime: 60_000,
   })
   const currentUserId = useAuthStore((s) => s.user)?.id

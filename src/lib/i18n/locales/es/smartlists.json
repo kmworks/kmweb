@@ -11,7 +11,6 @@
     "book": "Libros",
     "series": "Series"
   },
-  "editFilters": "Editar filtros",
   "filtersEmpty": "Sin filtros — coincide con todo",
   "filtersActive_one": "{{count, number}} filtro activo",
   "filtersActive_other": "{{count, number}} filtros activos",
